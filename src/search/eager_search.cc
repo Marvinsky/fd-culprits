@@ -10,7 +10,9 @@
 
 #include <cassert>
 #include <cstdlib>
+#include <cstdio>
 #include <set>
+#include "limits.h"
 using namespace std;
 
 EagerSearch::EagerSearch(
@@ -70,9 +72,13 @@ void EagerSearch::initialize() {
     assert(!heuristics.empty());
 
     const GlobalState &initial_state = g_initial_state();
-    for (size_t i = 0; i < heuristics.size(); ++i)
+    int min_h=INT_MAX/2;
+    for (size_t i = 0; i < heuristics.size(); ++i){
         heuristics[i]->evaluate(initial_state);
-    open_list->evaluate(0, false);
+	min_h=min(min_h,heuristics[i]->get_heuristic());
+    }
+    //open_list->evaluate(0, false);
+    open_list->evaluate2(0, min_h);
     search_progress.inc_evaluated_states();
     search_progress.inc_evaluations(heuristics.size());
 
@@ -99,11 +105,13 @@ void EagerSearch::statistics() const {
 }
 
 SearchStatus EagerSearch::step() {
+  //cout<<"starting step"<<endl;fflush(stdout);
     pair<SearchNode, bool> n = fetch_next_node();
     if (!n.second) {
         return FAILED;
     }
     SearchNode node = n.first;
+    int min_succ_h=INT_MAX;
 
     GlobalState s = node.get_state();
     if (check_goal_and_set_plan(s))
@@ -135,7 +143,7 @@ SearchStatus EagerSearch::step() {
 
         GlobalState succ_state = g_state_registry->get_successor_state(s, *op);
         search_progress.inc_generated();
-        bool is_preferred = (preferred_ops.find(op) != preferred_ops.end());
+        //bool is_preferred = (preferred_ops.find(op) != preferred_ops.end());
 
         SearchNode succ_node = search_space.get_node(succ_state);
 
@@ -161,10 +169,27 @@ SearchStatus EagerSearch::step() {
         }
 
         if (succ_node.is_new()) {
+	  //cout<<"node is new"<<endl;fflush(stdout);
             // We have not seen this state before.
             // Evaluate and create a new node.
-            for (size_t j = 0; j < heuristics.size(); ++j)
+	    int succ_h=0;
+	    bool is_node_dead_end=true;
+	    bool dead_end=false;
+            for (size_t j = 0; j < heuristics.size(); ++j){
                 heuristics[j]->evaluate(succ_state);
+		dead_end=heuristics[j]->is_dead_end();
+		if(dead_end){
+		  min_succ_h=min(min_succ_h,INT_MAX/2);
+		  //cout<<"it is dead_end,min_succ_h:"<<min_succ_h<<endl;fflush(stdout);
+		}
+		else{
+		  is_node_dead_end=false;
+		  //cout<<"not dead_end,min_succ_h:"<<min_succ_h<<endl;fflush(stdout);
+	  	  min_succ_h=min(min_succ_h,heuristics[j]->get_heuristic());
+		}
+	    }
+	  //cout<<"min_succ_h:"<<min_succ_h<<endl;fflush(stdout);
+		
             succ_node.clear_h_dirty();
             search_progress.inc_evaluated_states();
             search_progress.inc_evaluations(heuristics.size());
@@ -174,26 +199,30 @@ SearchStatus EagerSearch::step() {
             // before having checked that we're not in a dead end. The
             // division of responsibilities is a bit tricky here -- we
             // may want to refactor this later.
-            open_list->evaluate(node.get_g() + get_adjusted_cost(*op), is_preferred);
-            bool dead_end = open_list->is_dead_end();
-            if (dead_end) {
+            //open_list->evaluate(node.get_g() + get_adjusted_cost(*op), is_preferred);
+            open_list->evaluate2(node.get_g() + get_adjusted_cost(*op),succ_h);
+            //bool dead_end = open_list->is_dead_end();
+            if (is_node_dead_end) {
                 succ_node.mark_as_dead_end();
                 search_progress.inc_dead_ends();
                 continue;
             }
 
             //TODO:CR - add an ID to each state, and then we can use a vector to save per-state information
-            int succ_h = heuristics[0]->get_heuristic();
+            //int succ_h = heuristics[0]->get_heuristic();
             if (do_pathmax) {
+	      cout<<"Pathmax min support needs to be added"<<endl;exit(0);/*  
                 if ((node.get_h() - get_adjusted_cost(*op)) > succ_h) {
                     //cout << "Pathmax correction: " << succ_h << " -> " << node.get_h() - get_adjusted_cost(*op) << endl;
                     succ_h = node.get_h() - get_adjusted_cost(*op);
                     heuristics[0]->set_evaluator_value(succ_h);
-                    open_list->evaluate(node.get_g() + get_adjusted_cost(*op), is_preferred);
+                    //open_list->evaluate(node.get_g() + get_adjusted_cost(*op), is_preferred);
+		    open_list->evaluate2(node.get_g() + get_adjusted_cost(*op),min_succ_h);
                     search_progress.inc_pathmax_corrections();
-                }
+                }*/
             }
             succ_node.open(succ_h, node, op);
+	    //cout<<"node is open"<<endl;fflush(stdout);
 
             open_list->insert(succ_state.get_id());
             if (search_progress.check_h_progress(succ_node.get_g())) {
@@ -215,10 +244,11 @@ SearchStatus EagerSearch::step() {
                     search_progress.inc_reopened();
                 }
                 succ_node.reopen(node, op);
-                heuristics[0]->set_evaluator_value(succ_node.get_h());
+                //heuristics[0]->set_evaluator_value(succ_node.get_h());
                 // TODO: this appears fishy to me. Why is here only heuristic[0]
                 // involved? Is this still feasible in the current version?
-                open_list->evaluate(succ_node.get_g(), is_preferred);
+                //open_list->evaluate(succ_node.get_g(), is_preferred);
+                open_list->evaluate2(succ_node.get_g(), succ_node.get_h());
 
                 open_list->insert(succ_state.get_id());
             } else {
@@ -229,6 +259,7 @@ SearchStatus EagerSearch::step() {
             }
         }
     }
+  //cout<<"step in_progress"<<endl;fflush(stdout);
 
     return IN_PROGRESS;
 }
@@ -317,8 +348,10 @@ void EagerSearch::dump_search_space() {
 void EagerSearch::update_jump_statistic(const SearchNode &node) {
     if (f_evaluator) {
         heuristics[0]->set_evaluator_value(node.get_h());
-        f_evaluator->evaluate(node.get_g(), false);
-        int new_f_value = f_evaluator->get_value();
+        //f_evaluator->evaluate(node.get_g(), false);
+        //int new_f_value = f_evaluator->get_value();
+	int new_f_value = node.get_g()+node.get_h();
+	
         search_progress.report_f_value(new_f_value);
     }
 }
