@@ -43,6 +43,8 @@ HEADERS = \
           combining_evaluator.h \
           countdown_timer.h \
           domain_transition_graph.h \
+          type.h \
+          type_system.h \
           eager_search.h \
           enforced_hill_climbing_search.h \
           equivalence_relation.h \
@@ -224,7 +226,8 @@ endif
 CXXFLAGS =
 CXXFLAGS += -g
 CXXFLAGS += $(BITWIDTHOPT)
-CXXFLAGS += -std=c++11 -Wall -Wextra -pedantic -Wno-deprecated -Werror
+CXXFLAGS += -std=c++11 -Wall -Wextra -pedantic -Wno-deprecated
+## CXXFLAGS += -std=c++11 -Wall -Wextra -pedantic -Wno-deprecated -Werror
 
 CXXFLAGS += -Iext
 ifeq ($(DOWNWARD_OS), osx)
