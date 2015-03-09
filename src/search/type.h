@@ -15,6 +15,10 @@ public:
 
 	friend bool operator< (const Type&, const Type&);
 
+
+	Type &operator=(const Type &rhs);
+        bool operator==(const Type &rhs) const;
+
         int getLevel() const;
         void setLevel(int l);
 	vector<int> getHC() const;

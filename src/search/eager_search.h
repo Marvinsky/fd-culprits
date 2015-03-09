@@ -14,7 +14,10 @@
 #include "open_lists/open_list.h"
 #include "type.h"
 #include "type_system.h"
+#include "state_id.h"
 
+#include "randomc/randomc.h"
+#include "randomc/mersenne.cpp"
 
 class GlobalOperator;
 class Heuristic;
@@ -23,14 +26,14 @@ class ScalarEvaluator;
 
 class SSNode {
 private:
-        //GlobalState state;
+        StateID id;
 	double cc;
         vector<bool> bc;
 public:
-	SSNode() : cc(0.0), bc(0){}
-        SSNode(double w, vector<bool> b) : cc(w), bc(b) {}
-        //GlobalState getState() const {return this->state;}
-        //void setState(GlobalState s) {this->state = s;}
+	SSNode() : id(StateID::no_state), cc(0.0), bc(0){}
+        SSNode(StateID identifier, double w, vector<bool> b) : id(identifier), cc(w), bc(b) {}
+        StateID getId() const {return this->id;}
+        void setId(StateID identifier) {this->id = identifier;}
 	double getCC() {return this->cc;}
 	void setCC(double w) {this->cc = w;}
         vector<bool> getBC() {return this->bc;}
@@ -65,6 +68,8 @@ protected:
     // should disappear into the open list
 
     virtual void initialize();
+    //ss+culprits
+    CRandomMersenne* RanGen;
 
 public:
     EagerSearch(const Options &opts);
@@ -73,6 +78,7 @@ public:
     void dump_search_space();
     //ss+culprits
     void predict(int probes);
+    bool check_all_bool_are_false(vector<bool> bc);
 
 };
 

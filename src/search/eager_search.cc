@@ -13,6 +13,7 @@
 #include <cstdio>
 #include <set>
 #include "limits.h"
+
 using namespace std;
 
 EagerSearch::EagerSearch(
@@ -31,6 +32,8 @@ EagerSearch::EagerSearch(
         preferred_operator_heuristics =
             opts.get_list<Heuristic *>("preferred");
     }
+    //Initialize random number
+    this->RanGen = new CRandomMersenne((unsigned)time(NULL));
 }
 
 void EagerSearch::initialize() {
@@ -139,12 +142,15 @@ void EagerSearch::predict(int probes) {
             }
         }
         cout<<"141: "<<endl;
-        cout<<"b_initial_v.size() = "<<b_initial_v.size()<<endl;
+        cout<<"\nb_initial_v.size() = "<<b_initial_v.size()<<endl;
         for (size_t i = 0; i< b_initial_v.size(); i++) {
             cout<<b_initial_v.at(i)<<"\t";
         }
-
+        cout<<"\n";
         SSNode node;
+        StateID initial_state_id = initial_state.get_id();
+        cout<<"initial_state_id = "<<initial_state_id<<endl;
+        node.setId(initial_state_id);
         node.setCC(1.0);
         node.setBC(b_initial_v); 
 
@@ -168,12 +174,99 @@ void EagerSearch::predict(int probes) {
              std::vector<const GlobalOperator *> applicable_ops;
              set<const GlobalOperator *> preferred_ops; 
 
-             //g_successor_generator->generate_applicable_ops(s, applicable_ops);
+             GlobalState global_state = g_state_registry->lookup_state(s.getId());                
+             g_successor_generator->generate_applicable_ops(global_state, applicable_ops);
+             
+             for (unsigned int i = 0; i < applicable_ops.size(); ++i) {
+                  const GlobalOperator *op = applicable_ops[i];
+                  GlobalState child =  g_state_registry->get_successor_state(global_state, *op);
 
+                  vector<int> h_child_v;
+                  vector<bool> b_child_v; 
+                  for (size_t i = 0; i < heuristics.size(); ++i) {
+                      heuristics[i]->evaluate(child);
+                      h_child_v.push_back(heuristics[i]->get_heuristic());            	
+                  }
+
+
+                  for (size_t i = 0; i < h_child_v.size(); i++) {
+                      int h_value = h_child_v.at(i);
+                      cout<<i<<" - "<<h_value<<"\n\n";
+                      if (h_value <= threshold) {
+                          b_child_v.insert(b_child_v.begin() + i, true);
+                      } else {
+                          b_child_v.insert(b_child_v.begin() + i, false);
+                      }
+                  }
+                  cout<<"199: "<<endl;
+                  cout<<"\nb_child_v.size() = "<<b_child_v.size()<<endl;
+                  for (size_t i = 0; i< b_child_v.size(); i++) {
+                       cout<<b_child_v.at(i)<<"\t";
+                  }
+                  cout<<"\n";
+                  cout<<"validation_bc(b_child_v)"<<endl;
+                  if (!check_all_bool_are_false(b_child_v))  {
+                     cout<<"Some or all of them are true"<<endl;
+
+		     Type object = sampler->getType(h_child_v, g+1);
+                   
+                     SSNode child_node;
+                     StateID child_state_id = child.get_id();
+                     cout<<"child_state_id = "<<child_state_id<<endl;
+                     node.setId(child_state_id);
+                     node.setCC(w);
+                     node.setBC(b_child_v); 
+
+                     map<Type, SSNode>::iterator queueIt = queue.find(object); 
+                     if (queueIt != queue.end()) {
+                        cout<<"\tDuplicate node."<<endl;
+
+                        SSNode  snode = queueIt->second;
+                        double wa = snode.getCC();
+                        queueIt->second.setCC(wa + w);
+
+                        double prob = (double)w/(double)(wa + w);
+                        cout<<"prob = "<<prob<<endl;
+                        int rand_100 = RanGen->IRandom(0, 99); 
+                        cout<<"rand_100 = "<<rand_100<<endl;  
+                        double a = ((double)rand_100)/100;
+                        cout<<"a = "<<a<<endl;
+                        if (a < prob) {
+                            cout<<"\tAdded even though is duplicate.\n";
+
+
+                        }  else {
+                            cout<<"\tNot added."<<endl;
+                        }          
+                     } else {
+                        cout<<"\nnew node added."<<endl;
+                     }
+                  } else {
+                     cout<<"All are false - pruned!"<<endl;
+
+                  }
+                  cout<<"\n";
+             }
 
         }
 
 } 
+
+
+bool EagerSearch::check_all_bool_are_false(vector<bool> bc) {
+	bool allTrue = true;
+	bool allFalse = true;
+	for (size_t i = 0; i < bc.size(); i++) {
+	    if (bc.at(i)) {
+               allFalse = false;
+            } else {
+               allTrue = false;
+            }
+        }
+        cout<<"allTrue = "<<allTrue<<endl;
+        cout<<"allFalse = "<<allFalse<<endl;
+        return allFalse;
+}
 
 
 pair<SearchNode, bool> EagerSearch::fetch_next_node() {

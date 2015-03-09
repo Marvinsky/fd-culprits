@@ -35,7 +35,7 @@ void Type::print() const {
 }
 
 bool operator< (const Type& o1, const Type& o2) {
-        if (!equal(o1.hcs.begin(), o1.hcs.end(), o2.hcs.begin())) {
+        if (o1.hcs != o2.hcs) {
            return o1.hcs < o2.hcs;
         }
 
@@ -44,4 +44,16 @@ bool operator< (const Type& o1, const Type& o2) {
         }
 	
         return false;
+}
+
+Type& Type::operator=(const Type &rhs) {
+        this->hcs = rhs.hcs;
+	this->level = rhs.level;
+	return *this;
+}
+
+bool Type::operator==(const Type &rhs) const {
+	if (this->hcs != rhs.hcs) return false;
+	if (this->level != rhs.level) return false;
+	return true;
 }
