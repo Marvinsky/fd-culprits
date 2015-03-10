@@ -54,6 +54,7 @@ class EagerSearch : public SearchEngine {
     TypeSystem* sampler;
     map<Type, SSNode> queue;    
     int threshold;
+    map<vector<bool>, double> collector;
 protected:
     SearchStatus step();
     std::pair<SearchNode, bool> fetch_next_node();
@@ -82,6 +83,7 @@ public:
     void printQueue();
     void printNode(map<Type, SSNode>::iterator iter);
     void printNode2(Type t, SSNode t2);
+    void generateReport();
 };
 
 #endif
