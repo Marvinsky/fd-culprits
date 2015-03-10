@@ -129,22 +129,27 @@ void EagerSearch::predict(int probes) {
              h_initial_v.push_back(heuristics[i]->get_heuristic());            	
         }
         cout<<"probes = "<<probes<<endl;
-        cout<<"129:"<<endl;
         threshold = 6;
-
+        cout<<"\nprint h_initial_v\n";
 	for (size_t i = 0; i < h_initial_v.size(); i++) {
             int h_value = h_initial_v.at(i);
-            cout<<i<<" - "<<h_value<<"\n\n";
+            cout<<h_value;
+            if (i != h_initial_v.size() - 1) {
+               cout<<"/";
+            }
             if (h_value <= threshold) {
                b_initial_v.insert(b_initial_v.begin() + i, true);
             } else {
                b_initial_v.insert(b_initial_v.begin() + i, false);
             }
         }
-        cout<<"141: "<<endl;
-        cout<<"\nb_initial_v.size() = "<<b_initial_v.size()<<endl;
+        
+        cout<<"\nprint b_initial_v\n";
         for (size_t i = 0; i< b_initial_v.size(); i++) {
-            cout<<b_initial_v.at(i)<<"\t";
+            cout<<b_initial_v.at(i);
+            if (i != b_initial_v.size() -1) {
+               cout<<"/";
+            }
         }
         cout<<"\n";
         SSNode node;
@@ -161,6 +166,7 @@ void EagerSearch::predict(int probes) {
         while(!queue.empty()) {
              Type out = queue.begin()->first;
              SSNode s = queue.begin()->second;
+             printNode2(out, s);
              int g = out.getLevel();
              cout<<"g = "<<g<<endl;
 
@@ -182,45 +188,86 @@ void EagerSearch::predict(int probes) {
                   GlobalState child =  g_state_registry->get_successor_state(global_state, *op);
 
                   vector<int> h_child_v;
-                  vector<bool> b_child_v; 
+                  vector<bool> b_child_v;
+                  vector<int> f_child_v;
+                  vector<bool> b_f_child_v;
+
                   for (size_t i = 0; i < heuristics.size(); ++i) {
                       heuristics[i]->evaluate(child);
-                      h_child_v.push_back(heuristics[i]->get_heuristic());            	
+                      int new_heur = heuristics[i]->get_heuristic();
+                      h_child_v.push_back(new_heur);
+                      f_child_v.push_back(new_heur + g + 1);      	
                   }
 
-
+                  cout<<"*******************Child #"<<i<<"********************"<<endl;
+                  //working with h-value
+                  cout<<"\nprint h_child_v\n";                   
                   for (size_t i = 0; i < h_child_v.size(); i++) {
                       int h_value = h_child_v.at(i);
-                      cout<<i<<" - "<<h_value<<"\n\n";
+                      cout<<h_value;
+                      if (i != h_child_v.size() -1) {
+                          cout<<"/";
+                      }
                       if (h_value <= threshold) {
                           b_child_v.insert(b_child_v.begin() + i, true);
                       } else {
                           b_child_v.insert(b_child_v.begin() + i, false);
                       }
                   }
-                  cout<<"199: "<<endl;
-                  cout<<"\nb_child_v.size() = "<<b_child_v.size()<<endl;
+                  
+                  cout<<"\nprint b_child_v\n";
                   for (size_t i = 0; i< b_child_v.size(); i++) {
-                       cout<<b_child_v.at(i)<<"\t";
+                       cout<<b_child_v.at(i);
+                       if (i != b_child_v.size() -1) {
+                          cout<<"/";                         
+                       }
                   }
-                  cout<<"\n";
-                  cout<<"validation_bc(b_child_v)"<<endl;
-                  if (!check_all_bool_are_false(b_child_v))  {
-                     cout<<"Some or all of them are true"<<endl;
+                 
+                  // working with f-value
+                  cout<<"\nprint f_child_v\n";                   
+                  for (size_t i = 0; i < f_child_v.size(); i++) {
+                      int f_value = f_child_v.at(i);
+                      cout<<f_value;
+                      if (i != f_child_v.size() -1) {
+                          cout<<"/";
+                      }
+                      if (f_value <= threshold) {
+                          b_f_child_v.insert(b_f_child_v.begin() + i, true);
+                      } else {
+                          b_f_child_v.insert(b_f_child_v.begin() + i, false);
+                      }
+                  }
+                   
+                  cout<<"\nprint f_b_child_v\n";
+                  for (size_t i = 0; i < b_f_child_v.size(); i++) {
+			cout<<b_f_child_v.at(i);
+                        if (i != b_f_child_v.size() -1) {
+                           cout<<"/";
+                        }
+                  }
+ 
+ 
+                  cout<<"\nLet see if we can prune with f-value less or equal than the f-value!"<<endl;    
+                  if (!check_all_bool_are_false(b_f_child_v))  {
+                     cout<<"\nSome or all of them are true"<<endl;
 
 		     Type object = sampler->getType(h_child_v, g+1);
                    
                      SSNode child_node;
                      StateID child_state_id = child.get_id();
-                     cout<<"child_state_id = "<<child_state_id<<endl;
-                     node.setId(child_state_id);
-                     node.setCC(w);
-                     node.setBC(b_child_v); 
+                     
+                     child_node.setId(child_state_id);
+                     child_node.setCC(w);
+                     child_node.setBC(b_child_v); 
 
-                     map<Type, SSNode>::iterator queueIt = queue.find(object); 
+                     map<Type, SSNode>::iterator queueIt = queue.find(object);
+                     printQueue(); 
+
+ 
                      if (queueIt != queue.end()) {
                         cout<<"\tDuplicate node."<<endl;
-
+                        printNode2(queueIt->first, queueIt->second);
+     
                         SSNode  snode = queueIt->second;
                         double wa = snode.getCC();
                         queueIt->second.setCC(wa + w);
@@ -233,19 +280,29 @@ void EagerSearch::predict(int probes) {
                         cout<<"a = "<<a<<endl;
                         if (a < prob) {
                             cout<<"\tAdded even though is duplicate.\n";
+                            child_node.setCC(wa + w);
 
+                            std::pair<std::map<Type, SSNode>::iterator, bool> ret;
+			    queue.erase(object);
+
+                            ret = queue.insert(pair<Type, SSNode>(object, child_node));
+
+                            queueIt = ret.first;
+                            queueIt->second.setCC(child_node.getCC());
 
                         }  else {
                             cout<<"\tNot added."<<endl;
                         }          
                      } else {
-                        cout<<"\nnew node added."<<endl;
+                        queue.insert(pair<Type, SSNode>(object, child_node));
+                        cout<<"\tnew node added."<<endl;
+                        printNode2(object, child_node); 
                      }
                   } else {
                      cout<<"All are false - pruned!"<<endl;
 
                   }
-                  cout<<"\n";
+                  cout<<"\n*********************************************\n"<<endl;
              }
 
         }
@@ -267,6 +324,102 @@ bool EagerSearch::check_all_bool_are_false(vector<bool> bc) {
         cout<<"allFalse = "<<allFalse<<endl;
         return allFalse;
 }
+
+void EagerSearch::printQueue() {
+	cout<<"\nprintQueue:\n";
+	for (map<Type, SSNode>::iterator iter = queue.begin(); iter!= queue.end(); iter++) {
+		Type t = iter->first;
+	        SSNode t2 = iter->second;
+		vector<int> h_node_v = t.getHC();
+                int g = t.getLevel();
+                cout<<"h = ";
+                for (size_t i = 0; i < h_node_v.size(); i++) {
+		    cout<<h_node_v.at(i);
+                    if (i != h_node_v.size() - 1) {
+			cout<<"/";
+		    }
+		}
+                cout<<", g = "<<g<<", f = ";
+                for (size_t i = 0; i < h_node_v.size(); i++) {
+		    cout<<h_node_v.at(i) + g;
+                    if (i != h_node_v.size() - 1) {
+			cout<<"/";
+		    }
+		}
+                cout<<", cc = "<<t2.getCC()<<", b_node_v = ";
+                vector<bool> b_node_v = t2.getBC();
+                for (size_t i = 0; i < b_node_v.size(); i++) {
+                    cout<<b_node_v.at(i);
+                    if (i != b_node_v.size() - 1) {
+                       cout<<"/";
+                    }
+                }
+                cout<<"\n";
+	}
+        cout<<"\nprintQueue End:\n";
+}
+
+void EagerSearch::printNode(map<Type, SSNode>::iterator iter) {
+        cout<<"\nprintNode:\n";
+        Type t = iter->first;
+        SSNode t2 = iter->second;
+	vector<int> h_node_v = t.getHC();
+        int g = t.getLevel(); 
+	
+        for (size_t i = 0; i < h_node_v.size(); i++) {
+            cout<<h_node_v.at(i);
+            if (i != h_node_v.size() - 1) {
+		cout<<"/";
+            }
+        }
+        cout<<", g = "<<g<<", f = ";
+        for (size_t i = 0; i < h_node_v.size(); i++) {
+            cout<<h_node_v.at(i) + g;
+            if (i != h_node_v.size() - 1) {
+               cout<<"/";
+            }
+        }
+	cout<<", cc = "<<t2.getCC()<<", b_node_v = ";
+        vector<bool> b_node_v = t2.getBC();
+        for (size_t i = 0; i < b_node_v.size(); i++) {
+            cout<<b_node_v.at(i);
+            if (i != b_node_v.size() - 1) {
+               cout<<"/";
+            }
+        }
+	cout<<"\nprintNode End:\n";
+}
+
+
+void EagerSearch::printNode2(Type t, SSNode t2) {
+        cout<<"\nprintNode:\n";
+	vector<int> h_node_v = t.getHC();
+        int g = t.getLevel(); 
+	
+        for (size_t i = 0; i < h_node_v.size(); i++) {
+            cout<<h_node_v.at(i);
+            if (i != h_node_v.size() - 1) {
+		cout<<"/";
+            }
+        }
+        cout<<", g = "<<g<<", f = ";
+        for (size_t i = 0; i < h_node_v.size(); i++) {
+            cout<<h_node_v.at(i) + g;
+            if (i != h_node_v.size() - 1) {
+               cout<<"/";
+            }
+        }
+        cout<<", cc = "<<t2.getCC()<<", b_node_v = ";
+        vector<bool> b_node_v = t2.getBC();
+        for (size_t i = 0; i < b_node_v.size(); i++) {
+            cout<<b_node_v.at(i);
+            if (i != b_node_v.size() - 1) {
+               cout<<"/";
+            }
+        }
+	cout<<"\nprintNode End:\n";
+}
+
 
 
 pair<SearchNode, bool> EagerSearch::fetch_next_node() {

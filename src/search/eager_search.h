@@ -79,7 +79,9 @@ public:
     //ss+culprits
     void predict(int probes);
     bool check_all_bool_are_false(vector<bool> bc);
-
+    void printQueue();
+    void printNode(map<Type, SSNode>::iterator iter);
+    void printNode2(Type t, SSNode t2);
 };
 
 #endif
