@@ -114,6 +114,7 @@ SearchStatus EagerSearch::step() {
         
 	predict(ss_probes);
         cout<<"ss_probes = "<<ss_probes<<endl;
+        generateReport();
         return SOLVED;
 }
 
@@ -129,7 +130,7 @@ void EagerSearch::predict(int probes) {
              h_initial_v.push_back(heuristics[i]->get_heuristic());            	
         }
         cout<<"probes = "<<probes<<endl;
-        threshold = 6;
+        threshold = 12;
         cout<<"\nprint h_initial_v\n";
 	for (size_t i = 0; i < h_initial_v.size(); i++) {
             int h_value = h_initial_v.at(i);
@@ -173,10 +174,50 @@ void EagerSearch::predict(int probes) {
              std::map<Type, SSNode>::iterator ret0;
              ret0 = queue.find(out);
              queue.erase(ret0);
-             //int h = -1;
+             
              double w = s.getCC();
              cout<<"w = "<<w<<endl;
              
+             //Collect CC information
+             if (collector.insert(pair<vector<bool>, double>(s.getBC(), s.getCC())).second) {
+		cout<<"bc new is added"<<endl;
+		map<vector<bool>, double>::iterator iter = collector.find(s.getBC());
+                vector<bool> aux = iter->first;
+                cout<<"\tbc : ";
+                for (size_t i= 0; i < aux.size(); i++) {
+		    cout<<aux.at(i);
+                    if (i != aux.size() - 1) {
+		       cout<<"/";
+                    }
+                }
+                cout<<", cc : "<<iter->second<<"\n";
+
+
+             } else {
+                cout<<"bc old is being updated"<<endl;
+                map<vector<bool>, double>::iterator iter = collector.find(s.getBC());
+                vector<bool> aux = iter->first;
+                cout<<"\tbc duplicate: ";
+                for (size_t i= 0; i < aux.size(); i++) {
+		    cout<<aux.at(i);
+                    if (i != aux.size() - 1) {
+		       cout<<"/";
+                    }
+                }
+                cout<<", cc : "<<iter->second;
+
+
+                if (iter != collector.end()) {
+ 		   double q = iter->second;
+                   double newcc = s.getCC() + q;
+                   collector.erase(iter->first);
+                   //iter->second = newcc;
+                   collector.insert(pair<vector<bool>, double>(s.getBC(), newcc));
+                   cout<<", newcc : "<<newcc<<"\n";
+                }
+             }
+
+
              std::vector<const GlobalOperator *> applicable_ops;
              set<const GlobalOperator *> preferred_ops; 
 
@@ -420,7 +461,21 @@ void EagerSearch::printNode2(Type t, SSNode t2) {
 	cout<<"\nprintNode End:\n";
 }
 
-
+void EagerSearch::generateReport() {
+	for (map<vector<bool>, double>::iterator iter = collector.begin(); iter != collector.end();
+iter++) {
+		vector<bool> b_node_v = iter->first;
+                double cc = iter->second;
+                cout<<"bc: ";
+                for (size_t i = 0; i < b_node_v.size(); i++) {
+		    cout<<b_node_v.at(i);
+                    if (i != b_node_v.size() - 1) {
+			cout<<"/";
+                    }
+		}
+                cout<<", cc: "<<cc<<"\n";
+	}
+}
 
 pair<SearchNode, bool> EagerSearch::fetch_next_node() {
     /* TODO: The bulk of this code deals with multi-path dependence,
