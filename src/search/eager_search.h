@@ -54,7 +54,9 @@ class EagerSearch : public SearchEngine {
     TypeSystem* sampler;
     map<Type, SSNode> queue;    
     int threshold;
+    double totalPrediction;
     map<vector<bool>, double> collector;
+    vector<SSNode> vcc;
 protected:
     SearchStatus step();
     std::pair<SearchNode, bool> fetch_next_node();
@@ -79,11 +81,13 @@ public:
     void dump_search_space();
     //ss+culprits
     void predict(int probes);
+    void probe();
     bool check_all_bool_are_false(vector<bool> bc);
     void printQueue();
     void printNode(map<Type, SSNode>::iterator iter);
     void printNode2(Type t, SSNode t2);
     void generateReport();
+    double getProbingResult();
 };
 
 #endif

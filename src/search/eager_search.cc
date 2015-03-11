@@ -114,12 +114,26 @@ SearchStatus EagerSearch::step() {
         
 	predict(ss_probes);
         cout<<"ss_probes = "<<ss_probes<<endl;
-        generateReport();
         return SOLVED;
 }
 
-
 void EagerSearch::predict(int probes) {
+	totalPrediction = 0;
+	for (int i = 0; i < probes; i++) {
+		vcc.clear();
+		probe();
+                double p = getProbingResult();
+		totalPrediction = totalPrediction + (p - totalPrediction)/(i+1);
+		cout<<"*************"<<endl;
+		cout<<"p = "<<p<<endl;
+		cout<<"prePrediction = "<<totalPrediction<<endl;
+		cout<<"*************"<<endl;
+	}
+        cout<<"totalPrediction = "<<totalPrediction<<endl;
+	generateReport();	
+}
+
+void EagerSearch::probe() {
         queue.clear();
 
         const GlobalState &initial_state = g_initial_state();
@@ -129,7 +143,7 @@ void EagerSearch::predict(int probes) {
              heuristics[i]->evaluate(initial_state);
              h_initial_v.push_back(heuristics[i]->get_heuristic());            	
         }
-        cout<<"probes = "<<probes<<endl;
+        
         threshold = 12;
         cout<<"\nprint h_initial_v\n";
 	for (size_t i = 0; i < h_initial_v.size(); i++) {
@@ -168,6 +182,9 @@ void EagerSearch::predict(int probes) {
              Type out = queue.begin()->first;
              SSNode s = queue.begin()->second;
              printNode2(out, s);
+
+             vcc.push_back(s);
+
              int g = out.getLevel();
              cout<<"g = "<<g<<endl;
 
@@ -473,9 +490,22 @@ iter++) {
 			cout<<"/";
                     }
 		}
-                cout<<", cc: "<<cc<<"\n";
+                cout<<", cc: "<<(double)cc/(double)ss_probes<<"\n";
 	}
+	collector.clear();
 }
+
+double EagerSearch::getProbingResult() {
+	double expansions = 0;
+
+	for (size_t i = 0; i < vcc.size(); i++) {
+	    SSNode n = vcc.at(i);
+	    expansions += n.getCC();
+	}
+	cout<<"expansions = "<<expansions<<endl;
+	return expansions;
+}
+
 
 pair<SearchNode, bool> EagerSearch::fetch_next_node() {
     /* TODO: The bulk of this code deals with multi-path dependence,
