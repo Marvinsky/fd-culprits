@@ -34,6 +34,7 @@ void SearchProgress::report_f_value(int f) {
     if (f > lastjump_f_value) {
         lastjump_f_value = f;
         print_f_line();
+	cout <<",generated_states:,"<<generated_states<<",dead_end_states:"<<dead_end_states<<",Dup States:"<<generated_states-evaluated_states<< ",]" << endl;
         lastjump_expanded_states = expanded_states;
         lastjump_reopened_states = reopened_states;
         lastjump_evaluated_states = evaluated_states;
@@ -69,7 +70,6 @@ void SearchProgress::print_f_line() const {
     cout << "f = " << lastjump_f_value
          << " [";
     print_line();
-    cout << "]" << endl;
 }
 
 void SearchProgress::print_h_line(int g) const {
