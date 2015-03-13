@@ -46,6 +46,7 @@ HEADERS = \
           type.h \
           type_system.h \
           eager_search.h \
+          eager_search_astar.h \
           enforced_hill_climbing_search.h \
           equivalence_relation.h \
           exact_timer.h \
