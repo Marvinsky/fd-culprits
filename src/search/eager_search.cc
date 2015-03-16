@@ -102,6 +102,8 @@ void EagerSearch::initialize() {
 
         open_list->insert(initial_state.get_id());
     }
+    //cc+culprits
+    count_nodes = 0;
 }
 
 
@@ -126,7 +128,7 @@ void EagerSearch::predict(int probes) {
 		totalPrediction = totalPrediction + (p - totalPrediction)/(i+1);
 		cout<<"*************"<<endl;
 		cout<<"p = "<<p<<endl;
-		cout<<"prePrediction = "<<totalPrediction<<endl;
+		cout<<"prePrediction_"<<i<<" = "<<totalPrediction<<endl;
 		cout<<"*************"<<endl;
 	}
         cout<<"totalPrediction = "<<totalPrediction<<endl;
@@ -143,14 +145,21 @@ void EagerSearch::probe() {
              heuristics[i]->evaluate(initial_state);
              h_initial_v.push_back(heuristics[i]->get_heuristic());            	
         }
-        
-        threshold = 12;
-        cout<<"\nprint h_initial_v\n";
+        int max_h_initial_value = 0;
+        for (int i = 0; i < h_initial_v.size(); i++) {
+            int a = h_initial_v.at(i);
+            if (a > max_h_initial_value) {
+                max_h_initial_value = a;
+            }
+        }
+        threshold =  12;//2*max_h_initial_value;
+        cout<<"\tthreshold: "<<threshold<<endl;
+        //cout<<"\nprint h_initial_v\n";
 	for (size_t i = 0; i < h_initial_v.size(); i++) {
             int h_value = h_initial_v.at(i);
-            cout<<h_value;
+            //cout<<h_value;
             if (i != h_initial_v.size() - 1) {
-               cout<<"/";
+               //cout<<"/";
             }
             if (h_value <= threshold) {
                b_initial_v.insert(b_initial_v.begin() + i, true);
@@ -159,17 +168,17 @@ void EagerSearch::probe() {
             }
         }
         
-        cout<<"\nprint b_initial_v\n";
+        //cout<<"\nprint b_initial_v\n";
         for (size_t i = 0; i< b_initial_v.size(); i++) {
-            cout<<b_initial_v.at(i);
+            //cout<<b_initial_v.at(i);
             if (i != b_initial_v.size() -1) {
-               cout<<"/";
+               //cout<<"/";
             }
         }
-        cout<<"\n";
+        //cout<<"\n";
         SSNode node;
         StateID initial_state_id = initial_state.get_id();
-        cout<<"initial_state_id = "<<initial_state_id<<endl;
+        //cout<<"initial_state_id = "<<initial_state_id<<endl;
         node.setId(initial_state_id);
         node.setCC(1.0);
         node.setBC(b_initial_v); 
@@ -181,47 +190,47 @@ void EagerSearch::probe() {
         while(!queue.empty()) {
              Type out = queue.begin()->first;
              SSNode s = queue.begin()->second;
-             printNode2(out, s);
+             //printNode2(out, s);
 
              vcc.push_back(s);
 
              int g = out.getLevel();
-             cout<<"g = "<<g<<endl;
+             //cout<<"g = "<<g<<endl;
 
              std::map<Type, SSNode>::iterator ret0;
              ret0 = queue.find(out);
              queue.erase(ret0);
              
              double w = s.getCC();
-             cout<<"w = "<<w<<endl;
+             //cout<<"w = "<<w<<endl;
              
              //Collect CC information
              if (collector.insert(pair<vector<bool>, double>(s.getBC(), s.getCC())).second) {
-		cout<<"bc new is added"<<endl;
+		//cout<<"bc new is added"<<endl;
 		map<vector<bool>, double>::iterator iter = collector.find(s.getBC());
                 vector<bool> aux = iter->first;
-                cout<<"\tbc : ";
+                //cout<<"\tbc : ";
                 for (size_t i= 0; i < aux.size(); i++) {
-		    cout<<aux.at(i);
+		    //cout<<aux.at(i);
                     if (i != aux.size() - 1) {
-		       cout<<"/";
+		       //cout<<"/";
                     }
                 }
-                cout<<", cc : "<<iter->second<<"\n";
+                //cout<<", cc : "<<iter->second<<"\n";
 
 
              } else {
-                cout<<"bc old is being updated"<<endl;
+                //cout<<"bc old is being updated"<<endl;
                 map<vector<bool>, double>::iterator iter = collector.find(s.getBC());
                 vector<bool> aux = iter->first;
-                cout<<"\tbc duplicate: ";
+                //cout<<"\tbc duplicate: ";
                 for (size_t i= 0; i < aux.size(); i++) {
-		    cout<<aux.at(i);
+		    //cout<<aux.at(i);
                     if (i != aux.size() - 1) {
-		       cout<<"/";
+		       //cout<<"/";
                     }
                 }
-                cout<<", cc : "<<iter->second;
+                //cout<<", cc : "<<iter->second;
 
 
                 if (iter != collector.end()) {
@@ -230,10 +239,10 @@ void EagerSearch::probe() {
                    collector.erase(iter->first);
                    //iter->second = newcc;
                    collector.insert(pair<vector<bool>, double>(s.getBC(), newcc));
-                   cout<<", newcc : "<<newcc<<"\n";
+                   //cout<<", newcc : "<<newcc<<"\n";
                 }
              }
-
+             count_nodes++;
 
              std::vector<const GlobalOperator *> applicable_ops;
              set<const GlobalOperator *> preferred_ops; 
@@ -257,37 +266,37 @@ void EagerSearch::probe() {
                       f_child_v.push_back(new_heur + g + 1);      	
                   }
 
-                  cout<<"*******************Child #"<<i<<"********************"<<endl;
+                  //cout<<"*******************Child #"<<i<<"********************"<<endl;
                   //working with h-value
-                  cout<<"\nprint h_child_v\n";                   
+                  //cout<<"\nprint h_child_v\n";                   
                   for (size_t i = 0; i < h_child_v.size(); i++) {
                       int h_value = h_child_v.at(i);
-                      cout<<h_value;
+                      //cout<<h_value;
                       if (i != h_child_v.size() -1) {
-                          cout<<"/";
+                          //cout<<"/";
                       }
-                      if (h_value <= threshold) {
+                      if (h_value + g + 1<= threshold) {
                           b_child_v.insert(b_child_v.begin() + i, true);
                       } else {
                           b_child_v.insert(b_child_v.begin() + i, false);
                       }
                   }
                   
-                  cout<<"\nprint b_child_v\n";
+                  //cout<<"\nprint b_child_v\n";
                   for (size_t i = 0; i< b_child_v.size(); i++) {
-                       cout<<b_child_v.at(i);
+                       //cout<<b_child_v.at(i);
                        if (i != b_child_v.size() -1) {
-                          cout<<"/";                         
+                          //cout<<"/";                         
                        }
                   }
                  
                   // working with f-value
-                  cout<<"\nprint f_child_v\n";                   
+                  //cout<<"\nprint f_child_v\n";                   
                   for (size_t i = 0; i < f_child_v.size(); i++) {
                       int f_value = f_child_v.at(i);
-                      cout<<f_value;
+                      //cout<<f_value;
                       if (i != f_child_v.size() -1) {
-                          cout<<"/";
+                          //cout<<"/";
                       }
                       if (f_value <= threshold) {
                           b_f_child_v.insert(b_f_child_v.begin() + i, true);
@@ -296,18 +305,18 @@ void EagerSearch::probe() {
                       }
                   }
                    
-                  cout<<"\nprint f_b_child_v\n";
+                  //cout<<"\nprint f_b_child_v\n";
                   for (size_t i = 0; i < b_f_child_v.size(); i++) {
-			cout<<b_f_child_v.at(i);
+			//cout<<b_f_child_v.at(i);
                         if (i != b_f_child_v.size() -1) {
-                           cout<<"/";
+                           //cout<<"/";
                         }
                   }
  
  
-                  cout<<"\nLet see if we can prune with f-value less or equal than the f-value!"<<endl;    
+                  //cout<<"\nLet see if we can prune with f-value less or equal than the f-value!"<<endl;    
                   if (!check_all_bool_are_false(b_f_child_v))  {
-                     cout<<"\nSome or all of them are true"<<endl;
+                     //cout<<"\nSome or all of them are true"<<endl;
 
 		     Type object = sampler->getType(h_child_v, g+1);
                    
@@ -319,25 +328,25 @@ void EagerSearch::probe() {
                      child_node.setBC(b_child_v); 
 
                      map<Type, SSNode>::iterator queueIt = queue.find(object);
-                     printQueue(); 
+                     //printQueue(); 
 
  
                      if (queueIt != queue.end()) {
-                        cout<<"\tDuplicate node."<<endl;
-                        printNode2(queueIt->first, queueIt->second);
+                        //cout<<"\tDuplicate node."<<endl;
+                        //printNode2(queueIt->first, queueIt->second);
      
                         SSNode  snode = queueIt->second;
                         double wa = snode.getCC();
                         queueIt->second.setCC(wa + w);
 
                         double prob = (double)w/(double)(wa + w);
-                        cout<<"prob = "<<prob<<endl;
+                        //cout<<"prob = "<<prob<<endl;
                         int rand_100 = RanGen->IRandom(0, 99); 
-                        cout<<"rand_100 = "<<rand_100<<endl;  
+                        //cout<<"rand_100 = "<<rand_100<<endl;  
                         double a = ((double)rand_100)/100;
-                        cout<<"a = "<<a<<endl;
+                        //cout<<"a = "<<a<<endl;
                         if (a < prob) {
-                            cout<<"\tAdded even though is duplicate.\n";
+                            //cout<<"\tAdded even though is duplicate.\n";
                             child_node.setCC(wa + w);
 
                             std::pair<std::map<Type, SSNode>::iterator, bool> ret;
@@ -349,18 +358,18 @@ void EagerSearch::probe() {
                             queueIt->second.setCC(child_node.getCC());
 
                         }  else {
-                            cout<<"\tNot added."<<endl;
+                            //cout<<"\tNot added."<<endl;
                         }          
                      } else {
                         queue.insert(pair<Type, SSNode>(object, child_node));
-                        cout<<"\tnew node added."<<endl;
-                        printNode2(object, child_node); 
+                        //cout<<"\tnew node added."<<endl;
+                        //printNode2(object, child_node); 
                      }
                   } else {
-                     cout<<"All are false - pruned!"<<endl;
+                     //cout<<"All are false - pruned!"<<endl;
 
                   }
-                  cout<<"\n*********************************************\n"<<endl;
+                  //cout<<"\n*********************************************\n"<<endl;
              }
 
         }
@@ -378,8 +387,8 @@ bool EagerSearch::check_all_bool_are_false(vector<bool> bc) {
                allTrue = false;
             }
         }
-        cout<<"allTrue = "<<allTrue<<endl;
-        cout<<"allFalse = "<<allFalse<<endl;
+        //cout<<"allTrue = "<<allTrue<<endl;
+        //cout<<"allFalse = "<<allFalse<<endl;
         return allFalse;
 }
 
@@ -492,12 +501,13 @@ iter++) {
 		}
                 cout<<", cc: "<<(double)cc/(double)ss_probes<<"\n";
 	}
+        cout<<"count_nodes = "<<count_nodes<<endl;
 	collector.clear();
 }
 
 double EagerSearch::getProbingResult() {
 	double expansions = 0;
-
+ 
 	for (size_t i = 0; i < vcc.size(); i++) {
 	    SSNode n = vcc.at(i);
 	    expansions += n.getCC();

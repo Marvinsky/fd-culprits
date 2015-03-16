@@ -57,6 +57,7 @@ class EagerSearch : public SearchEngine {
     double totalPrediction;
     map<vector<bool>, double> collector;
     vector<SSNode> vcc;
+    int count_nodes;
 protected:
     SearchStatus step();
     std::pair<SearchNode, bool> fetch_next_node();
