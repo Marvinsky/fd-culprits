@@ -18,6 +18,8 @@
 
 #include "randomc/randomc.h"
 #include "randomc/mersenne.cpp"
+#include "ext/boost/dynamic_bitset.hpp"
+
 
 class GlobalOperator;
 class Heuristic;
@@ -28,16 +30,16 @@ class SSNode {
 private:
         StateID id;
 	double cc;
-        vector<bool> bc;
+        //vector<bool> bc;
 public:
-	SSNode() : id(StateID::no_state), cc(0.0), bc(0){}
-        SSNode(StateID identifier, double w, vector<bool> b) : id(identifier), cc(w), bc(b) {}
+	SSNode() : id(StateID::no_state), cc(0.0) {}
+        SSNode(StateID identifier, double w) : id(identifier), cc(w) {}
         StateID getId() const {return this->id;}
         void setId(StateID identifier) {this->id = identifier;}
 	double getCC() {return this->cc;}
 	void setCC(double w) {this->cc = w;}
-        vector<bool> getBC() {return this->bc;}
-        void setBC(vector<bool> b) {this->bc = b;}
+        //vector<bool> getBC() {return this->bc;}
+        //void setBC(vector<bool> b) {this->bc = b;}
 };
 
 
@@ -55,7 +57,7 @@ class EagerSearch : public SearchEngine {
     map<Type, SSNode> queue;    
     int threshold;
     double totalPrediction;
-    map<vector<bool>, double> collector;
+    map<boost::dynamic_bitset<>, double> collector;
     vector<SSNode> vcc;
     int count_nodes;
 protected:
@@ -83,7 +85,7 @@ public:
     //ss+culprits
     void predict(int probes);
     void probe();
-    bool check_all_bool_are_false(vector<bool> bc);
+    //bool check_all_bool_are_false(vector<bool> bc);
     void printQueue();
     void printNode(map<Type, SSNode>::iterator iter);
     void printNode2(Type t, SSNode t2);

@@ -13,6 +13,8 @@
 #include <cstdio>
 #include <set>
 #include "limits.h"
+#include "ext/boost/dynamic_bitset.hpp"
+#include "global_state.h"
 
 using namespace std;
 
@@ -37,6 +39,7 @@ EagerSearch::EagerSearch(
 }
 
 void EagerSearch::initialize() {
+srand(1);
     //TODO children classes should output which kind of search
     cout << "Conducting best first search"
          << (reopen_closed_nodes ? " with" : " without")
@@ -140,19 +143,19 @@ void EagerSearch::probe() {
 
         const GlobalState &initial_state = g_initial_state();
         vector<int> h_initial_v;
-        vector<bool> b_initial_v; 
+	boost::dynamic_bitset<> b_initial_v(heuristics.size()); 
         for (size_t i = 0; i < heuristics.size(); ++i) {
              heuristics[i]->evaluate(initial_state);
              h_initial_v.push_back(heuristics[i]->get_heuristic());            	
         }
         int max_h_initial_value = 0;
-        for (int i = 0; i < h_initial_v.size(); i++) {
+        for (size_t i = 0; i < h_initial_v.size(); i++) {
             int a = h_initial_v.at(i);
             if (a > max_h_initial_value) {
                 max_h_initial_value = a;
             }
         }
-        threshold =  12;//2*max_h_initial_value;
+        threshold =  6;//2*max_h_initial_value;
         cout<<"\tthreshold: "<<threshold<<endl;
         cout<<"\nprint h_initial_v\n";
 	for (size_t i = 0; i < h_initial_v.size(); i++) {
@@ -162,15 +165,14 @@ void EagerSearch::probe() {
                cout<<"/";
             }
             if (h_value <= threshold) {
-               b_initial_v.insert(b_initial_v.begin() + i, true);
-            } else {
-               b_initial_v.insert(b_initial_v.begin() + i, false);
+               //b_initial_v.insert(b_initial_v.begin() + i, true);
+               b_initial_v.set(i);
             }
         }
         
         cout<<"\nprint b_initial_v\n";
         for (size_t i = 0; i< b_initial_v.size(); i++) {
-            cout<<b_initial_v.at(i);
+            cout<<b_initial_v.test(i);
             if (i != b_initial_v.size() -1) {
                cout<<"/";
             }
@@ -178,15 +180,15 @@ void EagerSearch::probe() {
         cout<<"\n";
         SSNode node;
         StateID initial_state_id = initial_state.get_id();
-        //cout<<"initial_state_id = "<<initial_state_id<<endl;
-        node.setId(initial_state_id);
+//cout<<"initial_state_id = "<<initial_state_id<<endl;
+node.setId(initial_state_id);
         node.setCC(1.0);
-        node.setBC(b_initial_v); 
+        //node.setBC(b_initial_v); 
 
         Type type = sampler->getType(h_initial_v, 0);
 
         queue.insert(pair<Type, SSNode>(type, node));
-        
+        cout<<"queue.size() = "<<queue.size()<<endl;
         while(!queue.empty()) {
              Type out = queue.begin()->first;
              SSNode s = queue.begin()->second;
@@ -200,48 +202,11 @@ void EagerSearch::probe() {
              std::map<Type, SSNode>::iterator ret0;
              ret0 = queue.find(out);
              queue.erase(ret0);
-             
-             double w = s.getCC();
-             cout<<"w = "<<w<<endl;
-             
-             //Collect CC information
-             if (collector.insert(pair<vector<bool>, double>(s.getBC(), s.getCC())).second) {
-		cout<<"bc new is added"<<endl;
-		map<vector<bool>, double>::iterator iter = collector.find(s.getBC());
-                vector<bool> aux = iter->first;
-                cout<<"\tbc : ";
-                for (size_t i= 0; i < aux.size(); i++) {
-		    cout<<aux.at(i);
-                    if (i != aux.size() - 1) {
-		       cout<<"/";
-                    }
-                }
-                cout<<", cc : "<<iter->second<<"\n";
+            
 
+             cout<<"inserting"<<endl;
 
-             } else {
-                cout<<"bc old is being updated"<<endl;
-                map<vector<bool>, double>::iterator iter = collector.find(s.getBC());
-                vector<bool> aux = iter->first;
-                cout<<"\tbc duplicate: ";
-                for (size_t i= 0; i < aux.size(); i++) {
-		    cout<<aux.at(i);
-                    if (i != aux.size() - 1) {
-		       cout<<"/";
-                    }
-                }
-                cout<<", cc : "<<iter->second;
-
-
-                if (iter != collector.end()) {
- 		   double q = iter->second;
-                   double newcc = s.getCC() + q;
-                   collector.erase(iter->first);
-                   
-                   collector.insert(pair<vector<bool>, double>(s.getBC(), newcc));
-                   cout<<", newcc : "<<newcc<<"\n";
-                }
-             }
+ 
              count_nodes++;
 
              std::vector<const GlobalOperator *> applicable_ops;
@@ -250,14 +215,16 @@ void EagerSearch::probe() {
              GlobalState global_state = g_state_registry->lookup_state(s.getId());                
              g_successor_generator->generate_applicable_ops(global_state, applicable_ops);
              
+             cout<<"line 255"<<endl;
+             cout<<"ops.size() = "<<applicable_ops.size()<<endl;
              for (unsigned int i = 0; i < applicable_ops.size(); ++i) {
                   const GlobalOperator *op = applicable_ops[i];
                   GlobalState child =  g_state_registry->get_successor_state(global_state, *op);
 
                   vector<int> h_child_v;
-                  vector<bool> b_child_v;
+                  boost::dynamic_bitset<> b_child_v(heuristics.size());
                   vector<int> f_child_v;
-                  vector<bool> b_f_child_v;
+                  boost::dynamic_bitset<> b_f_child_v(heuristics.size());
                   vector<string> heur_name_v;
 
                   for (size_t i = 0; i < heuristics.size(); ++i) {
@@ -269,6 +236,13 @@ void EagerSearch::probe() {
                       heur_name_v.push_back(heur_name);
                   }
 
+
+                  cout<<"foobar."<<endl;
+                  child.dump_inline();
+                  cout<<"foobar end"<<endl;
+                 
+                  cout<<"h = "<<heuristics[0]->get_heuristic()<<", f = "<<heuristics[0]->get_heuristic() + g + get_adjusted_cost(*op)<<endl;
+                  
                   cout<<"*******************Child #"<<i<<"********************"<<endl;
                   //working with h-value
                   cout<<"\nprint h_child_v\n";
@@ -287,16 +261,69 @@ void EagerSearch::probe() {
                       if (i != h_child_v.size() -1) {
                          cout<<"/";
                       }
-                      if (h_value + g + 1<= threshold) {
-                          b_child_v.insert(b_child_v.begin() + i, true);
-                      } else {
-                          b_child_v.insert(b_child_v.begin() + i, false);
+                      if (h_value + g + get_adjusted_cost(*op)  <= threshold) {
+                          //b_child_v.insert(b_child_v.begin() + i, true);
+                          b_child_v.set(i);
                       }
                   }
-                  
+             
+	     std::vector<const GlobalOperator *> applicable_ops_2;
+             
+
+             GlobalState global_state_2 = g_state_registry->lookup_state(child.get_id());                
+             g_successor_generator->generate_applicable_ops(global_state_2, applicable_ops_2);
+             
+             int amount = applicable_ops_2.size();
+                
+             std::pair<std::map<boost::dynamic_bitset<>, double>::iterator, bool> ret2;
+          
+             std::map<boost::dynamic_bitset<>, double>::iterator it2; 
+      
+
+             if (b_child_v.count() > 0) {
+
+              
+ 	     ret2 = collector.insert(std::pair<boost::dynamic_bitset<>, double>(b_child_v, amount));
+             it2 = ret2.first;
+
+             if (ret2.second) {
+		cout<<"raiz bc new is added"<<endl;
+
+                /*
+                vector<bool> aux = it2->first;
+                cout<<"\tbc : ";
+                for (size_t i= 0; i < aux.size(); i++) {
+		    cout<<aux.at(i);
+                    if (i != aux.size() - 1) {
+		       cout<<"/";
+                    }
+                }
+                cout<<", cc : "<<it2->second<<"\n";
+
+                */
+             } else {
+                cout<<"raiz bc old is being updated"<<endl;
+                /*
+                vector<bool> aux = it2->first;
+                cout<<"\tbc duplicate: ";
+                for (size_t i= 0; i < aux.size(); i++) {
+		    cout<<aux.at(i);
+                    if (i != aux.size() - 1) {
+		       cout<<"/";
+                    }
+                }
+                cout<<", cc : "<<it2->second;
+                */
+                it2->second += amount;
+                cout<<", newcc : "<<it2->second<<"\n";
+               
+             }
+             }
+
+     
                   cout<<"\nprint b_child_v\n";
                   for (size_t i = 0; i< b_child_v.size(); i++) {
-                       cout<<b_child_v.at(i);
+                       cout<<b_child_v.test(i);
                        if (i != b_child_v.size() -1) {
                           cout<<"/";                         
                        }
@@ -311,15 +338,14 @@ void EagerSearch::probe() {
                          cout<<"/";
                       }
                       if (f_value <= threshold) {
-                          b_f_child_v.insert(b_f_child_v.begin() + i, true);
-                      } else {
-                          b_f_child_v.insert(b_f_child_v.begin() + i, false);
-                      }
+                          //b_f_child_v.insert(b_f_child_v.begin() + i, true);
+                          b_f_child_v.set(i);
+                      } 
                   }
                    
                   cout<<"\nprint f_b_child_v\n";
                   for (size_t i = 0; i < b_f_child_v.size(); i++) {
-			cout<<b_f_child_v.at(i);
+			cout<<b_f_child_v.test(i);
                         if (i != b_f_child_v.size() -1) {
                            cout<<"/";
                         }
@@ -327,7 +353,7 @@ void EagerSearch::probe() {
  
  
                   cout<<"\nLet see if we can prune with f-value less or equal than the f-value!"<<endl;    
-                  if (!check_all_bool_are_false(b_f_child_v))  {
+                  if (b_child_v.count() > 0)  {
                      cout<<"\nSome or all of them are true"<<endl;
 
 		     Type object = sampler->getType(h_child_v, g+1);
@@ -336,21 +362,21 @@ void EagerSearch::probe() {
                      StateID child_state_id = child.get_id();
                      
                      child_node.setId(child_state_id);
-                     child_node.setCC(w);
-                     child_node.setBC(b_child_v); 
+                     //child_node.setCC(w);
+                     //child_node.setBC(b_child_v); 
 
                      map<Type, SSNode>::iterator queueIt = queue.find(object);
                      printQueue(); 
 
+
  
-                     if (queueIt != queue.end()) {
+                     /*if (queueIt != queue.end()) {
                         cout<<"\tDuplicate node."<<endl;
                         printNode2(queueIt->first, queueIt->second);
      
                         SSNode  snode = queueIt->second;
                         double wa = snode.getCC();
                         queueIt->second.setCC(wa + w);
-
                         double prob = (double)w/(double)(wa + w);
                         cout<<"prob = "<<prob<<endl;
                         int rand_100 = RanGen->IRandom(0, 99); 
@@ -360,7 +386,6 @@ void EagerSearch::probe() {
                         if (a < prob) {
                             cout<<"\tAdded even though is duplicate.\n";
                             child_node.setCC(wa + w);
-
                             std::pair<std::map<Type, SSNode>::iterator, bool> ret;
 			    queue.erase(object);
 
@@ -376,7 +401,9 @@ void EagerSearch::probe() {
                         queue.insert(pair<Type, SSNode>(object, child_node));
                         cout<<"\tnew node added."<<endl;
                         printNode2(object, child_node); 
-                     }
+                     }*/
+                     queue.insert(pair<Type, SSNode>(object, child_node));
+                      
                   } else {
                      cout<<"All are false - pruned!"<<endl;
 
@@ -389,26 +416,12 @@ void EagerSearch::probe() {
 } 
 
 
-bool EagerSearch::check_all_bool_are_false(vector<bool> bc) {
-	bool allTrue = true;
-	bool allFalse = true;
-	for (size_t i = 0; i < bc.size(); i++) {
-	    if (bc.at(i)) {
-               allFalse = false;
-            } else {
-               allTrue = false;
-            }
-        }
-        //cout<<"allTrue = "<<allTrue<<endl;
-        //cout<<"allFalse = "<<allFalse<<endl;
-        return allFalse;
-}
 
 void EagerSearch::printQueue() {
 	cout<<"\nprintQueue:\n";
 	for (map<Type, SSNode>::iterator iter = queue.begin(); iter!= queue.end(); iter++) {
 		Type t = iter->first;
-	        SSNode t2 = iter->second;
+	        //SSNode t2 = iter->second;
 		vector<int> h_node_v = t.getHC();
                 int g = t.getLevel();
                 cout<<"h = ";
@@ -425,21 +438,22 @@ void EagerSearch::printQueue() {
 			cout<<"/";
 		    }
 		}
-                cout<<", cc = "<<t2.getCC()<<", b_node_v = ";
-                vector<bool> b_node_v = t2.getBC();
+                //cout<<", cc = "<<t2.getCC()<<", b_node_v = ";
+                /*vector<bool> b_node_v = t2.getBC();
                 for (size_t i = 0; i < b_node_v.size(); i++) {
                     cout<<b_node_v.at(i);
                     if (i != b_node_v.size() - 1) {
                        cout<<"/";
                     }
                 }
+                */
                 cout<<"\n";
 	}
         cout<<"\nprintQueue End:\n";
 }
 
 void EagerSearch::printNode(map<Type, SSNode>::iterator iter) {
-        cout<<"\nprintNode:\n";
+        /*cout<<"\nprintNode:\n";
         Type t = iter->first;
         SSNode t2 = iter->second;
 	vector<int> h_node_v = t.getHC();
@@ -465,7 +479,7 @@ void EagerSearch::printNode(map<Type, SSNode>::iterator iter) {
             if (i != b_node_v.size() - 1) {
                cout<<"/";
             }
-        }
+        }*/
 	cout<<"\nprintNode End:\n";
 }
 
@@ -489,24 +503,24 @@ void EagerSearch::printNode2(Type t, SSNode t2) {
             }
         }
         cout<<", cc = "<<t2.getCC()<<", b_node_v = ";
-        vector<bool> b_node_v = t2.getBC();
+        /*vector<bool> b_node_v = t2.getBC();
         for (size_t i = 0; i < b_node_v.size(); i++) {
             cout<<b_node_v.at(i);
             if (i != b_node_v.size() - 1) {
                cout<<"/";
             }
-        }
+        }*/
 	cout<<"\nprintNode End:\n";
 }
 
 void EagerSearch::generateReport() {
-	for (map<vector<bool>, double>::iterator iter = collector.begin(); iter != collector.end();
+	for (map<boost::dynamic_bitset<>, double>::iterator iter = collector.begin(); iter != collector.end();
 iter++) {
-		vector<bool> b_node_v = iter->first;
+		boost::dynamic_bitset<> b_node_v = iter->first;
                 double cc = iter->second;
                 cout<<"bc: ";
                 for (size_t i = 0; i < b_node_v.size(); i++) {
-		    cout<<b_node_v.at(i);
+		    cout<<b_node_v.test(i);
                     if (i != b_node_v.size() - 1) {
 			cout<<"/";
                     }
