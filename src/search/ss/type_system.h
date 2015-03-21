@@ -6,10 +6,12 @@
 
 #include "type.h"
 #include "type_children.h"
-#include "state.h"
-#include "heuristic.h"
-#include "operator.h"
-#include "search_engine.h"
+#include "../global_state.h"
+#include "../heuristic.h"
+#include "../global_operator.h"
+#include "../search_engine.h"
+#include "../state_id.h"
+
 
 using namespace::std;
 
@@ -17,7 +19,7 @@ using namespace::std;
 class TypeSystem {
 private:
 
-	void sample(State state, int parent_heuristic, TypeChildren& children, int type, int current_level);
+	void sample(StateID id, int parent_heuristic, TypeChildren& children, int type, int current_level);
 	short* getEmptyFeatures(int lookahead);
 	Heuristic* heuristic;
 	int best_h;
@@ -26,7 +28,7 @@ public:
 	TypeSystem(Heuristic* heuristic);
 	~TypeSystem();
 
-	Type getType(State state, int h, int type);
+	Type getType(StateID id, int h, int type);
 };
 
 #endif

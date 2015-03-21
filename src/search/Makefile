@@ -43,8 +43,8 @@ HEADERS = \
           combining_evaluator.h \
           countdown_timer.h \
           domain_transition_graph.h \
-          type.h \
-          type_system.h \
+          type2.h \
+          type_system2.h \
           eager_search.h \
           eager_search_astar.h \
           enforced_hill_climbing_search.h \
@@ -157,6 +157,14 @@ HEADERS += pdbs/canonical_pdbs_heuristic.h \
            pdbs/pdb_heuristic.h \
            pdbs/util.h \
            pdbs/zero_one_pdbs_heuristic.h \
+
+##HEADERS += ss/type_child.h \
+##           ss/type_children.h \
+##           ss/type.h \
+##           ss/type_system.h \
+##           ss/node2.h \
+##           ss/ss_search.h \
+
 
 SOURCES = planner.cc $(HEADERS:%.h=%.cc)
 TARGET = downward

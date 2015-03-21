@@ -1,9 +1,9 @@
 #include "type_system.h"
-#include "globals.h"
-#include "option_parser.h"
-#include "successor_generator.h"
-#include "plugin.h"
-#include "rng.h"
+#include "../globals.h"
+#include "../option_parser.h"
+#include "../successor_generator.h"
+#include "../plugin.h"
+#include "../rng.h"
 
 #include <vector>
 
@@ -17,18 +17,22 @@ TypeSystem::~TypeSystem()
 
 }
 
-void TypeSystem::sample(State state, int parent_heuristic, TypeChildren& type_children, int type, int current_level)
+void TypeSystem::sample(StateID id, int parent_heuristic, TypeChildren& type_children, int type, int current_level)
 {
 	if(current_level == type)
 	{
 		return;
 	}
 
-	std::vector<const Operator*> applicable_ops;
-	g_successor_generator->generate_applicable_ops(state, applicable_ops);
-	for (int i = 0; i < applicable_ops.size(); ++i)
+	std::vector<const GlobalOperator*> applicable_ops;
+        GlobalState global_state = g_state_registry->lookup_state(id);
+
+	g_successor_generator->generate_applicable_ops(global_state, applicable_ops);
+	for (size_t i = 0; i < applicable_ops.size(); ++i)
 	{
-		State child(state, *applicable_ops[i]);
+		
+                const GlobalOperator *op = applicable_ops[i];
+                GlobalState child = g_state_registry->get_successor_state(global_state, *op);
 
 		heuristic->evaluate(child);
 
@@ -52,12 +56,14 @@ void TypeSystem::sample(State state, int parent_heuristic, TypeChildren& type_ch
 			type_children.addTypeChild(c);
 		}
 
-		sample(child, h, type_children, type, current_level + 1);
+		sample(child.get_id(), h, type_children, type, current_level + 1);
 	}
 }
 
-Type TypeSystem::getType(State state, int h, int type)
+Type TypeSystem::getType(StateID id, int h, int type)
 {
+        GlobalState state = g_state_registry->lookup_state(id);
+
 	heuristic->evaluate(state);
 
 //	best_h = h;
@@ -65,7 +71,7 @@ Type TypeSystem::getType(State state, int h, int type)
 	TypeChildren type_children;
 	Type obj(-1, h);
 
-	sample(state, h, type_children, type, 0);
+	sample(id, h, type_children, type, 0);
 
 //	obj.setBestH(best_h);
 

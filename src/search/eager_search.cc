@@ -33,9 +33,7 @@ EagerSearch::EagerSearch(
     if (opts.contains("preferred")) {
         preferred_operator_heuristics =
             opts.get_list<Heuristic *>("preferred");
-    }
-    //Initialize random number
-    this->RanGen = new CRandomMersenne((unsigned)time(NULL));
+    } 
 }
 
 void EagerSearch::initialize() {
@@ -74,7 +72,7 @@ srand(1);
     for (set<Heuristic *>::iterator it = hset.begin(); it != hset.end(); ++it) {
         heuristics.push_back(*it);
     }
-    sampler = new TypeSystem(heuristics);
+    sampler = new TypeSystem2(heuristics);
 
     assert(!heuristics.empty());
 
@@ -106,7 +104,9 @@ srand(1);
         open_list->insert(initial_state.get_id());
     }
     //cc+culprits
-    count_nodes = 0;
+    //std::random_device rd;
+    //std::mt19937 mt(rd());
+    //std::uniform_real_distribution<int> dist(1, 100); 
 }
 
 
@@ -140,6 +140,10 @@ void EagerSearch::predict(int probes) {
 
 void EagerSearch::probe() {
         queue.clear();
+	
+        //std::random_device rd;
+        //std::mt19937 mt(rd());
+        //std::uniform_real_distribution<int> dist(1, 100);
 
         const GlobalState &initial_state = g_initial_state();
         vector<int> h_initial_v;
@@ -185,12 +189,12 @@ node.setId(initial_state_id);
         node.setCC(1.0);
         //node.setBC(b_initial_v); 
 
-        Type type = sampler->getType(h_initial_v, 0);
+        Type2 type = sampler->getType(h_initial_v, 0);
 
-        queue.insert(pair<Type, SSNode>(type, node));
+        queue.insert(pair<Type2, SSNode>(type, node));
         cout<<"queue.size() = "<<queue.size()<<endl;
         while(!queue.empty()) {
-             Type out = queue.begin()->first;
+             Type2 out = queue.begin()->first;
              SSNode s = queue.begin()->second;
              printNode2(out, s);
 
@@ -199,7 +203,7 @@ node.setId(initial_state_id);
              int g = out.getLevel();
              cout<<"g = "<<g<<endl;
 
-             std::map<Type, SSNode>::iterator ret0;
+             std::map<Type2, SSNode>::iterator ret0;
              ret0 = queue.find(out);
              queue.erase(ret0);
             
@@ -207,7 +211,7 @@ node.setId(initial_state_id);
              cout<<"inserting"<<endl;
 
  
-             count_nodes++;
+             
 
              std::vector<const GlobalOperator *> applicable_ops;
              set<const GlobalOperator *> preferred_ops; 
@@ -216,6 +220,7 @@ node.setId(initial_state_id);
              g_successor_generator->generate_applicable_ops(global_state, applicable_ops);
              
              cout<<"line 255"<<endl;
+             
              cout<<"ops.size() = "<<applicable_ops.size()<<endl;
              for (unsigned int i = 0; i < applicable_ops.size(); ++i) {
                   const GlobalOperator *op = applicable_ops[i];
@@ -356,7 +361,7 @@ node.setId(initial_state_id);
                   if (b_child_v.count() > 0)  {
                      cout<<"\nSome or all of them are true"<<endl;
 
-		     Type object = sampler->getType(h_child_v, g+1);
+		     Type2 object = sampler->getType(h_child_v, g+1);
                    
                      SSNode child_node;
                      StateID child_state_id = child.get_id();
@@ -365,11 +370,11 @@ node.setId(initial_state_id);
                      //child_node.setCC(w);
                      //child_node.setBC(b_child_v); 
 
-                     map<Type, SSNode>::iterator queueIt = queue.find(object);
+                     map<Type2, SSNode>::iterator queueIt = queue.find(object);
                      printQueue(); 
 
-
- 
+ 		     //int rand_100 = dist(mt);
+                     //cout<<"rand_100 = "<<rand_100<<endl;
                      /*if (queueIt != queue.end()) {
                         cout<<"\tDuplicate node."<<endl;
                         printNode2(queueIt->first, queueIt->second);
@@ -379,17 +384,17 @@ node.setId(initial_state_id);
                         queueIt->second.setCC(wa + w);
                         double prob = (double)w/(double)(wa + w);
                         cout<<"prob = "<<prob<<endl;
-                        int rand_100 = RanGen->IRandom(0, 99); 
-                        //cout<<"rand_100 = "<<rand_100<<endl;  
+                        int rand_100 = dist(mt);  //RanGen->IRandom(0, 99); 
+                        cout<<"rand_100 = "<<rand_100<<endl;  
                         double a = ((double)rand_100)/100;
                         cout<<"a = "<<a<<endl;
                         if (a < prob) {
                             cout<<"\tAdded even though is duplicate.\n";
                             child_node.setCC(wa + w);
-                            std::pair<std::map<Type, SSNode>::iterator, bool> ret;
+                            std::pair<std::map<Type2, SSNode>::iterator, bool> ret;
 			    queue.erase(object);
 
-                            ret = queue.insert(pair<Type, SSNode>(object, child_node));
+                            ret = queue.insert(pair<Type2, SSNode>(object, child_node));
 
                             queueIt = ret.first;
                             queueIt->second.setCC(child_node.getCC());
@@ -398,11 +403,11 @@ node.setId(initial_state_id);
                             cout<<"\tNot added."<<endl;
                         }          
                      } else {
-                        queue.insert(pair<Type, SSNode>(object, child_node));
+                        queue.insert(pair<Type2, SSNode>(object, child_node));
                         cout<<"\tnew node added."<<endl;
                         printNode2(object, child_node); 
                      }*/
-                     queue.insert(pair<Type, SSNode>(object, child_node));
+                     queue.insert(pair<Type2, SSNode>(object, child_node));
                       
                   } else {
                      cout<<"All are false - pruned!"<<endl;
@@ -419,8 +424,8 @@ node.setId(initial_state_id);
 
 void EagerSearch::printQueue() {
 	cout<<"\nprintQueue:\n";
-	for (map<Type, SSNode>::iterator iter = queue.begin(); iter!= queue.end(); iter++) {
-		Type t = iter->first;
+	for (map<Type2, SSNode>::iterator iter = queue.begin(); iter!= queue.end(); iter++) {
+		Type2 t = iter->first;
 	        //SSNode t2 = iter->second;
 		vector<int> h_node_v = t.getHC();
                 int g = t.getLevel();
@@ -452,39 +457,7 @@ void EagerSearch::printQueue() {
         cout<<"\nprintQueue End:\n";
 }
 
-void EagerSearch::printNode(map<Type, SSNode>::iterator iter) {
-        /*cout<<"\nprintNode:\n";
-        Type t = iter->first;
-        SSNode t2 = iter->second;
-	vector<int> h_node_v = t.getHC();
-        int g = t.getLevel(); 
-	
-        for (size_t i = 0; i < h_node_v.size(); i++) {
-            cout<<h_node_v.at(i);
-            if (i != h_node_v.size() - 1) {
-		cout<<"/";
-            }
-        }
-        cout<<", g = "<<g<<", f = ";
-        for (size_t i = 0; i < h_node_v.size(); i++) {
-            cout<<h_node_v.at(i) + g;
-            if (i != h_node_v.size() - 1) {
-               cout<<"/";
-            }
-        }
-	cout<<", cc = "<<t2.getCC()<<", b_node_v = ";
-        vector<bool> b_node_v = t2.getBC();
-        for (size_t i = 0; i < b_node_v.size(); i++) {
-            cout<<b_node_v.at(i);
-            if (i != b_node_v.size() - 1) {
-               cout<<"/";
-            }
-        }*/
-	cout<<"\nprintNode End:\n";
-}
-
-
-void EagerSearch::printNode2(Type t, SSNode t2) {
+void EagerSearch::printNode2(Type2 t, SSNode t2) {
         cout<<"\nprintNode:\n";
 	vector<int> h_node_v = t.getHC();
         int g = t.getLevel(); 
@@ -527,7 +500,7 @@ iter++) {
 		}
                 cout<<", cc: "<<(double)cc/(double)ss_probes<<"\n";
 	}
-        cout<<"count_nodes = "<<count_nodes<<endl;
+        
 	collector.clear();
 }
 

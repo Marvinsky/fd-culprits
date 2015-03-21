@@ -1,21 +1,25 @@
 #include "ss_search.h"
-#include "globals.h"
-#include "option_parser.h"
-#include "successor_generator.h"
-#include "plugin.h"
-#include "rng.h"
+
+#include "../globals.h"
+#include "../heuristic.h"
+#include "../option_parser.h"
+#include "../successor_generator.h"
+#include "../g_evaluator.h"
+#include "../sum_evaluator.h"
+#include "../plugin.h"
+#include "../rng.h"
 
 #include <iostream>
 #include <fstream>
 
-SSSearch::SSSearch(const Options &opts) :SearchEngine(opts), current_state(*g_initial_state){
-	rg = opts.get<double>("rg");
-	rl = opts.get<double>("rl");
-	lookahead = opts.get<int>("lookahead");
-	beamsize = opts.get<int>("beamsize");
-	maxlevels = opts.get<int>("maxlevels");
-	timelimit = opts.get<int>("timelimit");
-	cout << "rg: " << rg << endl;
+SSSearch::SSSearch(const Options &opts) : SearchEngine(opts), current_state(g_initial_state()) {
+	//rg = opts.get<double>("rg");
+	//rl = opts.get<double>("rl");
+	//lookahead = opts.get<int>("lookahead");
+	//beamsize = opts.get<int>("beamsize");
+	//maxlevels = opts.get<int>("maxlevels");
+	//timelimit = opts.get<int>("timelimit");
+	
 	ScalarEvaluator * evaluator = opts.get<ScalarEvaluator *>("eval");
 	std::set<Heuristic *> hset;
 	evaluator->get_involved_heuristics(hset);
@@ -26,14 +30,14 @@ SSSearch::SSSearch(const Options &opts) :SearchEngine(opts), current_state(*g_in
 	heuristic = heuristics[0];
 
 	sampler = new TypeSystem(heuristic);
-        this->RanGen = new CRandomMersenne((unsigned)time(NULL));
+	this->RanGen2 = new CRandomMersenne((unsigned)time(NULL));        
 }
 
 SSSearch::~SSSearch() {
 }
 
 
-int SSSearch::step() {
+SearchStatus SSSearch::step() {
         predict(ss_probes);
         return SOLVED;
 }
@@ -63,7 +67,7 @@ void SSSearch::probe()
 
         queue.clear();
 	// evaluating the initial state
-	heuristic->evaluate(*g_initial_state);
+	heuristic->evaluate(g_initial_state());
 	if (heuristic->is_dead_end())
 	{
 		assert(heuristic->dead_ends_are_reliable());
@@ -75,34 +79,24 @@ void SSSearch::probe()
         //for the open domains the heuristic is set to six
         threshold = 2*initial_value;
 
-	// adding the initial state to open
-	//SSNode node(*g_initial_state, 1.0);
         SSNode node;
-        node.setState(*g_initial_state);
+        const GlobalState &initial_state = g_initial_state();
+        StateID initial_state_id = initial_state.get_id();
+        node.setId(initial_state_id);
         node.setWeight(1.0);
 	/*
 	 * Seeding the prediction with the children of the start state
 	 *
 	 */
-	Type type = sampler->getType(node.getState(), initial_value, lookahead);
-        //Type type = sampler->getType2(initial_value, 0);       
+	Type type = sampler->getType(node.getId(), initial_value, 1);
+          
  
 	type.setLevel( 0 );
 
 	queue.insert( pair<Type, SSNode>( type, node ) );
-        //S.insert( pair<Type, double>( type, 0.0 ) );	
-        
-        count_value = 1;
-        //count_level_value = 0;
 
-        count_ss_report++;
-
-        int count1 = 1;
-        int count2 = 1;
         int nraiz = 1;
- 
-        vector<bool> vbool;
-        int bcount = 0; 
+  
 	while( !queue.empty() )
 	{
 		Type out = queue.begin()->first;
@@ -124,49 +118,39 @@ void SSSearch::probe()
 	        
                 //Insert each node.
                 Node2 node2(out.getH() + g, g);
-                //collector.insert(pair<Node2, int>(node2, s.getWeight()));
-                /*
-                if (collector.insert(pair<Node2, unsigned long long>(node2, s.getWeight())).second) {
-                   //count_value = 1;
-                } else {
-                   cout<<"ss_search.cc:131"<<endl;
-                   map<Node2, unsigned long long>::iterator iter = collector.find(node2);
-                   unsigned long long q = iter->second;
-                   unsigned long long neww = s.getWeight() + q;
-                   iter->second = neww;
-                }	
-                */               
-                //average information
-                if (average.insert(pair<Node2, unsigned long long>(node2, s.getWeight())).second) {
-                   //count_average_report = 1;
+                
+                if (average.insert(pair<Node2, double>(node2, s.getWeight())).second) {
+                
                 } else {
                    
-                   map<Node2, unsigned long long>::iterator iter = average.find(node2);
+                   map<Node2, double>::iterator iter = average.find(node2);
                    if (iter != average.end()) {
-                      unsigned long long q2 = iter->second;
-                      unsigned long long neww = s.getWeight() + q2;
+                      double q2 = iter->second;
+                      double neww = s.getWeight() + q2;
                                          
                       average.erase(node2); 
 
                       iter->second = neww;
                     
-                      average.insert(pair<Node2, unsigned long long>(iter->first, neww));                                }
+                      average.insert(pair<Node2, double>(iter->first, neww));                                }
                 }
 
                 //end average information
  
 		int h = -1;
 		double w = (double)s.getWeight();
-		//cout<<"w = "<<w<<endl;  
-                std::vector<const Operator*> applicable_ops;
-		g_successor_generator->generate_applicable_ops(s.getState(), applicable_ops);
-		for (int i = 0; i < applicable_ops.size(); ++i)
+		//cout<<"w = "<<w<<endl;
+ 
+                std::vector<const GlobalOperator*> applicable_ops;
+                GlobalState global_state = g_state_registry->lookup_state(s.getId()); 
+		g_successor_generator->generate_applicable_ops(global_state, applicable_ops);
+
+		for (size_t i = 0; i < applicable_ops.size(); ++i)
 		{
-			State child(s.getState(), *applicable_ops[i]);
+                        const GlobalOperator *op = applicable_ops[i];
+                        GlobalState child = g_state_registry->get_successor_state(global_state, *op);
 
-			heuristic->evaluate(child);
-
-			//int h = -1;
+                        heuristic->evaluate(child);	
 
 			if(!heuristic->is_dead_end())
 			{
@@ -177,13 +161,13 @@ void SSSearch::probe()
 			//cout<<"\tChild: h = "<< h <<" g = "<< g + 1 <<" f = "<< h + g + 1 <<" w = "<<w<<endl; 
 
                         if (h + g + 1 <= threshold) {
-			   Type object = sampler->getType(child, h,  lookahead);
-			   //Type object = sampler->getType2(h, g + 1);
+			   Type object = sampler->getType(child.get_id(), h,  1);
+			    
                            object.setLevel( g + 1 );
 
-			   //SSNode child_node(child, w);
                            SSNode child_node;
-                           child_node.setState(child);
+                           StateID child_state_id = child.get_id();
+                           child_node.setId(child_state_id);
                            child_node.setWeight(w);
 
                            //cout<<"\tChild: h = "<<object.getH()<<" g = "<<object.getLevel()<<" f = "<<object.getH() + object.getLevel()<<"\n"; 
@@ -206,14 +190,14 @@ void SSSearch::probe()
  
  
 				double prob = ( double )w / (double)( wa + w );
-				int rand_100 = RanGen->IRandom(0, 99);  //(int)g_rng.next(100);
+				int rand_100 =  RanGen2->IRandom(0, 99);  //(int)g_rng.next(100);
                           	 
                                 double a = (( double )rand_100) / 100;
                                 //cout<<"a = "<<a<<" prob = "<<prob<<endl;
-                                bool b = a < prob;
-                                //cout<<"b = "<<b<<endl;
-                                vbool.insert(vbool.begin() + bcount, b);
-                                bcount++;
+                                
+                                
+                                
+                                
 				if (a < prob) 
 				{
                                         //cout<<"\t\tAdded even though is duplicate.\n";
@@ -228,7 +212,7 @@ void SSSearch::probe()
                                         queueIt = ret.first;
                                         queueIt->second.setWeight(child_node.getWeight());
                                         
-                                      	count1++;
+                                      	
 				} else {
                                         //cout<<"\t\tNot added.\n";
                                 }
@@ -239,7 +223,7 @@ void SSSearch::probe()
 				queue.insert( pair<Type, SSNode>( object, child_node ) );
                                 //cout<<"\t\tchild_node.getWeight() = "<<child_node.getWeight()<<"\n";
                                 //S.insert( pair<Type, double>( object,12.44 ) );
-                                count2++;
+                                
                                 //cout<<"\t\tChild: h = "<< h <<" g = "<< g + 1 <<" f = "<< h + g + 1 << " threshold: " << threshold <<" w = "<<child_node.getWeight()<<endl;
                            }
                         }
@@ -250,7 +234,7 @@ void SSSearch::probe()
 			}
 		}
 	}
-        //generateReport(count_ss_report);
+        
 }
 
 void SSSearch::generateReport(int id) {
@@ -293,8 +277,8 @@ void SSSearch::generateReport(int id) {
         for (int i = 0; i <= threshold; i++) {
             int k = 0;
             vector<long> f;
-            vector<unsigned long long> q;
-            for (map<Node2, unsigned long long>::iterator iter = collector.begin(); iter != collector.end(); iter++) {
+            vector<double> q;
+            for (map<Node2, double>::iterator iter = collector.begin(); iter != collector.end(); iter++) {
                  Node2 n = iter->first;
                  if (i == n.getL()) {
                     k++;
@@ -307,7 +291,7 @@ void SSSearch::generateReport(int id) {
 
             cout<<"size: "<<k<<"\n";            
             output<<"size: "<<k<<"\n"; 
-            for (int j = 0; j < f.size(); j++) {
+            for (size_t j = 0; j < f.size(); j++) {
                  cout<<"\tf: "<<f.at(j)<<"\tq: "<<q.at(j)<<"\n";
                  output<<"\tf: "<<f.at(j)<<"\tq: "<<q.at(j)<<"\n";
             }
@@ -319,7 +303,7 @@ void SSSearch::generateReport(int id) {
 }
 
 void SSSearch::generateAverageReport() {
-       
+        
         string dominio = domain_name;
         string tarefa = problem_name2;
         string heuristica = heuristic_name2;
@@ -353,7 +337,7 @@ void SSSearch::generateAverageReport() {
             int k = 0;
             vector<long> f;
             vector<double> q;
-            for (map<Node2, unsigned long long>::iterator iter = average.begin(); iter != average.end(); iter++) {
+            for (map<Node2, double>::iterator iter = average.begin(); iter != average.end(); iter++) {
                  Node2 n = iter->first;
                 
                  if (i == n.getL()) {
@@ -371,7 +355,7 @@ void SSSearch::generateAverageReport() {
 
             cout<<"size: "<<k<<"\n";            
             output<<"size: "<<k<<"\n"; 
-            for (int j = 0; j < f.size(); j++) {
+            for (size_t j = 0; j < f.size(); j++) {
                  cout<<"\tf: "<<f.at(j)<<"\tq: "<<q.at(j)<<"\n";
                  output<<"\tf: "<<f.at(j)<<"\tq: "<<q.at(j)<<"\n";
             }
@@ -387,7 +371,7 @@ void SSSearch::generateAverageReport() {
 double SSSearch::getProbingResult() {
         double expansions = 0;
         
-        for (int i = 0; i < vweight.size(); i++) {
+        for (size_t i = 0; i < vweight.size(); i++) {
              SSNode n = vweight.at(i);
              expansions += n.getWeight();
         }
@@ -420,7 +404,7 @@ void SSSearch::initialize() {
         
 	//queue.clear();
 	// evaluating the initial state
-	heuristic->evaluate(*g_initial_state);
+	heuristic->evaluate(g_initial_state());
 	if (heuristic->is_dead_end())
 	{
 		assert(heuristic->dead_ends_are_reliable());
@@ -429,24 +413,7 @@ void SSSearch::initialize() {
 	}
 	initial_value = heuristic->get_value();
 	total_min = initial_value;
-        /*
-        //for the open domains the heuristic is set to six
-        threshold = 2*initial_value;
-	// adding the initial state to open
-	SSNode node(*g_initial_state, 1);
-	// Seeding the prediction with the children of the start state
-	 
-	 
-	Type type = sampler->getType(node.state, initial_value, lookahead);
-	type.setLevel( 0 );
-	node.weight = 1;
-	queue.insert( pair<Type, SSNode>( type, node ) );
-	//open.insert(make_pair(initial_value, node));
-        //Initialize 
-        //count_value = 1;
-        //Node2 node2(initial_value + type.getLevel(), type.getLevel());
-        //collector.insert(pair<Node2, int>(node2, count_value));
-        */
+       
 	progress = true;
 	cout << "Initial heuristic value: ";
 	cout << initial_value << endl;
@@ -456,13 +423,14 @@ void SSSearch::initialize() {
 }
 
 static SearchEngine *_parse(OptionParser &parser) {
+        
 	parser.add_option<ScalarEvaluator *>("eval");
-	parser.add_option<double>("rg", DEFAULT_SS_RG, "the global restarting rate");
-	parser.add_option<double>("rl", DEFAULT_SS_RL, "the local restarting rate");
-	parser.add_option<int>("lookahead", DEFAULT_SS_LOOKAHEAD, "lookahead that defines the type system being used");
-	parser.add_option<int>("beamsize", DEFAULT_SS_BEAMSIZE, "maximum number of nodes expanded by level");
-	parser.add_option<int>("maxlevels", DEFAULT_SS_MAXLEVELS, "maximum number of nodes expanded by level");
-	parser.add_option<int>("timelimit", DEFAULT_SS_TIMELIMIT, "time limit in seconds to solve the problem");
+	//parser.add_option<double>("rg", DEFAULT_SS_RG, "the global restarting rate");
+	//parser.add_option<double>("rl", DEFAULT_SS_RL, "the local restarting rate");
+	//parser.add_option<int>("lookahead", DEFAULT_SS_LOOKAHEAD, "lookahead that defines the type system being used");
+	//parser.add_option<int>("beamsize", DEFAULT_SS_BEAMSIZE, "maximum number of nodes expanded by level");
+	//parser.add_option<int>("maxlevels", DEFAULT_SS_MAXLEVELS, "maximum number of nodes expanded by level");
+	//parser.add_option<int>("timelimit", DEFAULT_SS_TIMELIMIT, "time limit in seconds to solve the problem");
 	SearchEngine::add_options_to_parser(parser);
 	Options opts = parser.parse();
 	SSSearch *engine = 0;

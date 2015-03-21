@@ -12,13 +12,13 @@
 #include "timer.h"
 
 #include "open_lists/open_list.h"
-#include "type.h"
-#include "type_system.h"
+#include "type2.h"
+#include "type_system2.h"
 #include "state_id.h"
 
-#include "randomc/randomc.h"
-#include "randomc/mersenne.cpp"
 #include "ext/boost/dynamic_bitset.hpp"
+#include <random>
+#include <iostream>
 
 
 class GlobalOperator;
@@ -53,8 +53,8 @@ class EagerSearch : public SearchEngine {
     ScalarEvaluator *f_evaluator;
 
     //ss+culprits
-    TypeSystem* sampler;
-    map<Type, SSNode> queue;    
+    TypeSystem2* sampler;
+    map<Type2, SSNode> queue;    
     int threshold;
     double totalPrediction;
     map<boost::dynamic_bitset<>, double> collector;
@@ -75,7 +75,9 @@ protected:
 
     virtual void initialize();
     //ss+culprits
-    CRandomMersenne* RanGen;
+    //std::random_device rd;
+    //std::mt19937 mt;
+    //std::uniform_real_distribution<int> dist; 
 
 public:
     EagerSearch(const Options &opts);
@@ -86,9 +88,8 @@ public:
     void predict(int probes);
     void probe();
     //bool check_all_bool_are_false(vector<bool> bc);
-    void printQueue();
-    void printNode(map<Type, SSNode>::iterator iter);
-    void printNode2(Type t, SSNode t2);
+    void printQueue(); 
+    void printNode2(Type2 t, SSNode t2);
     void generateReport();
     double getProbingResult();
 };

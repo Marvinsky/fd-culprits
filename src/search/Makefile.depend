@@ -118,8 +118,8 @@
 .obj/domain_transition_graph.release.o: domain_transition_graph.cc \
  domain_transition_graph.h global_operator.h global_state.h int_packer.h \
  state_id.h globals.h utilities.h
-.obj/type.release.o: type.cc type.h
-.obj/type_system.release.o: type_system.cc type_system.h type.h heuristic.h \
+.obj/type2.release.o: type2.cc type2.h
+.obj/type_system2.release.o: type_system2.cc type_system2.h type2.h heuristic.h \
  operator_cost.h scalar_evaluator.h evaluator.h task_proxy.h \
  abstract_task.h global_state.h int_packer.h state_id.h globals.h \
  option_parser.h option_parser_util.h utilities.h ext/tree.hh \
@@ -231,9 +231,9 @@
  operator_cost.h search_space.h per_state_information.h globals.h \
  segmented_vector.h utilities.h state_registry.h search_node_info.h \
  search_progress.h timer.h heuristic.h scalar_evaluator.h task_proxy.h \
- abstract_task.h open_lists/open_list.h open_lists/../evaluator.h type.h \
- type_system.h randomc/randomc.h randomc/mersenne.cpp randomc/randomc.h \
- ext/boost/dynamic_bitset.hpp ext/boost/dynamic_bitset/dynamic_bitset.hpp \
+ abstract_task.h open_lists/open_list.h open_lists/../evaluator.h type2.h \
+ type_system2.h ext/boost/dynamic_bitset.hpp \
+ ext/boost/dynamic_bitset/dynamic_bitset.hpp \
  ext/boost/dynamic_bitset/config.hpp ext/boost/config.hpp \
  ext/boost/config/user.hpp ext/boost/config/select_compiler_config.hpp \
  ext/boost/config/compiler/gcc.hpp \
@@ -6958,8 +6958,8 @@
 .obj/domain_transition_graph.debug.o: domain_transition_graph.cc \
  domain_transition_graph.h global_operator.h global_state.h int_packer.h \
  state_id.h globals.h utilities.h
-.obj/type.debug.o: type.cc type.h
-.obj/type_system.debug.o: type_system.cc type_system.h type.h heuristic.h \
+.obj/type2.debug.o: type2.cc type2.h
+.obj/type_system2.debug.o: type_system2.cc type_system2.h type2.h heuristic.h \
  operator_cost.h scalar_evaluator.h evaluator.h task_proxy.h \
  abstract_task.h global_state.h int_packer.h state_id.h globals.h \
  option_parser.h option_parser_util.h utilities.h ext/tree.hh \
@@ -7071,9 +7071,9 @@
  operator_cost.h search_space.h per_state_information.h globals.h \
  segmented_vector.h utilities.h state_registry.h search_node_info.h \
  search_progress.h timer.h heuristic.h scalar_evaluator.h task_proxy.h \
- abstract_task.h open_lists/open_list.h open_lists/../evaluator.h type.h \
- type_system.h randomc/randomc.h randomc/mersenne.cpp randomc/randomc.h \
- ext/boost/dynamic_bitset.hpp ext/boost/dynamic_bitset/dynamic_bitset.hpp \
+ abstract_task.h open_lists/open_list.h open_lists/../evaluator.h type2.h \
+ type_system2.h ext/boost/dynamic_bitset.hpp \
+ ext/boost/dynamic_bitset/dynamic_bitset.hpp \
  ext/boost/dynamic_bitset/config.hpp ext/boost/config.hpp \
  ext/boost/config/user.hpp ext/boost/config/select_compiler_config.hpp \
  ext/boost/config/compiler/gcc.hpp \
@@ -13798,8 +13798,8 @@
 .obj/domain_transition_graph.profile.o: domain_transition_graph.cc \
  domain_transition_graph.h global_operator.h global_state.h int_packer.h \
  state_id.h globals.h utilities.h
-.obj/type.profile.o: type.cc type.h
-.obj/type_system.profile.o: type_system.cc type_system.h type.h heuristic.h \
+.obj/type2.profile.o: type2.cc type2.h
+.obj/type_system2.profile.o: type_system2.cc type_system2.h type2.h heuristic.h \
  operator_cost.h scalar_evaluator.h evaluator.h task_proxy.h \
  abstract_task.h global_state.h int_packer.h state_id.h globals.h \
  option_parser.h option_parser_util.h utilities.h ext/tree.hh \
@@ -13911,9 +13911,9 @@
  operator_cost.h search_space.h per_state_information.h globals.h \
  segmented_vector.h utilities.h state_registry.h search_node_info.h \
  search_progress.h timer.h heuristic.h scalar_evaluator.h task_proxy.h \
- abstract_task.h open_lists/open_list.h open_lists/../evaluator.h type.h \
- type_system.h randomc/randomc.h randomc/mersenne.cpp randomc/randomc.h \
- ext/boost/dynamic_bitset.hpp ext/boost/dynamic_bitset/dynamic_bitset.hpp \
+ abstract_task.h open_lists/open_list.h open_lists/../evaluator.h type2.h \
+ type_system2.h ext/boost/dynamic_bitset.hpp \
+ ext/boost/dynamic_bitset/dynamic_bitset.hpp \
  ext/boost/dynamic_bitset/config.hpp ext/boost/config.hpp \
  ext/boost/config/user.hpp ext/boost/config/select_compiler_config.hpp \
  ext/boost/config/compiler/gcc.hpp \
