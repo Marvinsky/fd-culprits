@@ -14,6 +14,9 @@
 #include <set>
 #include "../global_state.h"
 
+#include <iostream>
+#include <fstream>
+
 using namespace std;
 
 DFSSearch::DFSSearch(
@@ -112,7 +115,7 @@ SearchStatus DFSSearch::step() {
         StateID initial_state_id = initial_state.get_id();
         SSNode node(initial_state_id, h_initial, 0);
     
-        depth = 6;
+        depth = 12;
         queue.push(node);
         double count_nodes = 1.0;
 
@@ -125,20 +128,43 @@ SearchStatus DFSSearch::step() {
               StateID state_id = nodecp.get_id();
 
               Node2 node2(nodecp.get_h_value() + g, g);
-
-              if (collector.insert(pair<Node2, double>(node2, count_nodes)).second) {
-
+ 
+	      /*if (collector.insert(pair<Node2, double>(node2, count_nodes)).second) {
+                 count_nodes = 1;
               } else {
                  map<Node2, double>::iterator iter = collector.find(node2);
                  int q = iter->second;
                  q++;
                  iter->second = q;
-              }
+              }*/
+
               count_nodes++;
+
               std::vector<const GlobalOperator *> applicable_ops;
 
               GlobalState global_state = g_state_registry->lookup_state(nodecp.get_id());                
               g_successor_generator->generate_applicable_ops(global_state, applicable_ops);
+              
+
+
+              double amount = (double)applicable_ops.size();
+
+              //Inserting
+	      std::pair<std::map<Node2, double>::iterator, bool> ret;
+
+              std::map<Node2, double>::iterator it;
+              
+              ret = collector.insert(std::pair<Node2, double>(node2, amount));
+              it = ret.first;
+
+              if (ret.second) {
+                 cout<<"new node is added."<<endl;
+              }  else {
+                 cout<<"node is updated."<<endl;
+                 it->second += amount;
+                 cout<<"new = "<<it->second<<endl;
+              }
+              
  
 	      for (size_t i = 0; i < applicable_ops.size(); ++i) {
                   const GlobalOperator *op = applicable_ops[i];
@@ -162,9 +188,10 @@ SearchStatus DFSSearch::step() {
  
         cout<<"end expansion of nodes finished."<<endl;
         cout<<"Total of nodes expanded: "<<count_nodes<<endl;
+        cout<<"Abisrror Zarate Marvin"<<endl;
         int nodes_total = 0;
-        for (map<Node2, int>::iterator iter = collector.begin(); iter != collector.end(); iter++) {
-            Node2 n = iter->first;
+        for (map<Node2, double>::iterator iter = collector.begin(); iter != collector.end(); iter++) {
+            
   	    int q = iter->second;
             nodes_total += q;  
         }
@@ -182,10 +209,14 @@ SearchStatus DFSSearch::step() {
     	cout<<"heuristica = "<<heuristica<<endl;
 
     	string directoryDomain = "mkdir /home/marvin/marvin/testdfs/"+heuristica+"/reportdfs/"+dominio;
-    	system(directoryDomain.c_str());
+    	if (system(directoryDomain.c_str())) {
+           cout<<dominio.c_str()<<" directory created."<<endl;
+        }
 
     	string directoryFdist = "mkdir /home/marvin/marvin/testdfs/"+heuristica+"/reportdfs/"+dominio+"/fdist/";
-    	system(directoryFdist.c_str());
+    	if (system(directoryFdist.c_str())) {
+           cout<<"fdist created."<<endl;
+        }
 
     	string outputFile = "/home/marvin/marvin/testdfs/"+heuristica+"/reportdfs/"+dominio+"/fdist/"+tarefa;
     	cout<<"outputFile = "<<outputFile.c_str()<<endl;
@@ -197,8 +228,8 @@ SearchStatus DFSSearch::step() {
     	for (int i = 0; i <= depth; i++) {
        		int k = 0;
        		vector<int> f;
-       		vector<int> q;
-       		for (map<Node2, int>::iterator iter = collector.begin(); iter != collector.end(); iter++) {
+       		vector<double> q;
+       		for (map<Node2, double>::iterator iter = collector.begin(); iter != collector.end(); iter++) {
            		Node2 n = iter->first;
            		if (i == n.getL()) {
               		    k++;
@@ -212,7 +243,7 @@ SearchStatus DFSSearch::step() {
        		cout<<"size: "<<k<<"\n";
        		output<<"size: "<<k<<"\n";
 
-       		for (int j = 0; j < f.size(); j++) {
+       		for (size_t j = 0; j < f.size(); j++) {
            		cout<<"\tf: "<<f.at(j)<<"\tq: "<<q.at(j)<<"\n";
            		output<<"\tf: "<<f.at(j)<<"\tq: "<<q.at(j)<<"\n";
        		}
@@ -500,5 +531,5 @@ static SearchEngine *_parse_greedy(OptionParser &parser) {
 }
 
 static Plugin<SearchEngine> _plugin("eager", _parse);
-static Plugin<SearchEngine> _plugin_astar("dfs", _parse_astar);
+static Plugin<SearchEngine> _plugin_astar("dfs_culprits", _parse_astar);
 static Plugin<SearchEngine> _plugin_greedy("eager_greedy", _parse_greedy);

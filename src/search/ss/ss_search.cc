@@ -55,8 +55,9 @@ void SSSearch::predict(int probes) {
             cout<<"prePre = "<<totalPrediction<<endl;
             cout<<"**********"<<endl;
         }
-        cout<<"totalPrediction = "<<totalPrediction<<endl;
-        generateAverageReport();
+        cout<<"\ntotalPrediction : "<<totalPrediction<<"\n";
+        generateGeneratedReport();
+        generateExpandedReport();
 }
 
 void SSSearch::probe()
@@ -105,11 +106,11 @@ void SSSearch::probe()
 
                 //printQueue();
 
-                std::map<Type, SSNode>::iterator ret0;
-                ret0 = queue.find(out);
+                std::map<Type, SSNode>::iterator rt;
+                rt = queue.find(out);
 
 
-		queue.erase( ret0 );
+		queue.erase( rt );
                 //cout<<nraiz<<": Raiz: h = "<<out.getH()<<" g = "<<out.getLevel()<<" f = "<<out.getH() + out.getLevel()<<" w  = "<<s.getWeight()<<endl;   
                 nraiz++;                
                 
@@ -118,24 +119,25 @@ void SSSearch::probe()
 	        
                 //Insert each node.
                 Node2 node2(out.getH() + g, g);
-                
-                if (average.insert(pair<Node2, double>(node2, s.getWeight())).second) {
-                
-                } else {
-                   
-                   map<Node2, double>::iterator iter = average.find(node2);
-                   if (iter != average.end()) {
-                      double q2 = iter->second;
-                      double neww = s.getWeight() + q2;
-                                         
-                      average.erase(node2); 
 
-                      iter->second = neww;
-                    
-                      average.insert(pair<Node2, double>(iter->first, neww));                                }
+                //count nodes expanded
+
+                std::pair<std::map<Node2, double>::iterator, bool> ret0;
+
+                std::map<Node2, double>::iterator it0;
+
+                ret0 = expanded.insert(pair<Node2, double>(node2, s.getWeight()));
+                it0 = ret0.first;
+
+                if (ret0.second) {
+                    cout<<"new node expanded is added."<<endl;
+                } else {
+                    cout<<"node expanded is being updated."<<endl;
+                    it0->second += s.getWeight();
+                    cout<<"it0->second = "<<it0->second<<endl;
                 }
 
-                //end average information
+                //end count node
  
 		int h = -1;
 		double w = (double)s.getWeight();
@@ -145,6 +147,24 @@ void SSSearch::probe()
                 GlobalState global_state = g_state_registry->lookup_state(s.getId()); 
 		g_successor_generator->generate_applicable_ops(global_state, applicable_ops);
 
+                //count nodes generated
+                double amount = (double)applicable_ops.size();
+
+                std::pair<std::map<Node2, double>::iterator, bool> ret;
+                std::map<Node2, double>::iterator it;
+
+                ret = generated.insert(std::pair<Node2, double>(node2, amount));
+                it = ret.first;
+
+
+                if (ret.second) {
+                   cout<<"new node is added."<<endl;
+                } else {
+                   cout<<"old is being updated."<<endl;
+                   it->second += amount;
+                   cout<<"new = "<<it->second<<endl;
+                }
+                 //end count nodes generated
 		for (size_t i = 0; i < applicable_ops.size(); ++i)
 		{
                         const GlobalOperator *op = applicable_ops[i];
@@ -237,76 +257,27 @@ void SSSearch::probe()
         
 }
 
-void SSSearch::generateReport(int id) {
-        stringstream Resultado;
-        string arquivo;
-        arquivo += problem_name2;
-        Resultado<<id;
-        arquivo += Resultado.str();
-	cout<<"arquivo = "<<arquivo<<endl;
-
-        string dominio = domain_name;
-        string tarefa = arquivo; //problem_name2
-        string heuristica = heuristic_name2;
-
-        cout<<"dominio = "<<dominio<<endl;
-        cout<<"tarefa = "<<tarefa<<endl;
-        cout<<"heuristica = "<<heuristica<<endl;
-
-        string dirDomain = "mkdir /home/marvin/marvin/testss/"+heuristica+"/reportss/"+dominio;
-        string dirfDist = "mkdir /home/marvin/marvin/testss/"+heuristica+"/reportss/"+dominio+"/fdist";
-       
-        string outputFile = "/home/marvin/marvin/testss/"+heuristica+"/reportss/"+dominio+"/fdist/"+tarefa;
-
-        ofstream output;
-
-        output.open(outputFile.c_str());
-        output<<"\t"<<outputFile.c_str()<<"\n" ;
-        output<<"predictionSS: "<<getProbingResult()<<"\n";
-        output<<"threshold: "<<threshold<<"\n";
-        
-
-        if (system(dirDomain.c_str())) {
-           cout<<"Directory: "<<heuristica<<" created."<<endl;
-        }
-
-        if (system(dirfDist.c_str())) {
-           cout<<"Directory: fdist created."<<endl;
-        }
-        cout<<"print."<<endl;
-        for (int i = 0; i <= threshold; i++) {
-            int k = 0;
-            vector<long> f;
-            vector<double> q;
-            for (map<Node2, double>::iterator iter = collector.begin(); iter != collector.end(); iter++) {
-                 Node2 n = iter->first;
-                 if (i == n.getL()) {
-                    k++;
-                    f.push_back(n.getF());
-                    q.push_back(iter->second);
-                 }
-            }
-            cout<<"g:"<<i<<"\n";
-            output<<"g:"<<i<<"\n";
-
-            cout<<"size: "<<k<<"\n";            
-            output<<"size: "<<k<<"\n"; 
-            for (size_t j = 0; j < f.size(); j++) {
-                 cout<<"\tf: "<<f.at(j)<<"\tq: "<<q.at(j)<<"\n";
-                 output<<"\tf: "<<f.at(j)<<"\tq: "<<q.at(j)<<"\n";
-            }
-            cout<<"\n";
-            output<<"\n";
-        }
-        output.close();
-        collector.clear();
+void SSSearch::generateGeneratedReport() {
+       double count_nodes = 0;
+       for (map<Node2, double>::iterator iter = generated.begin(); iter != generated.end(); iter++) {
+           double n = iter->second;
+           count_nodes += n;
+       }
+       cout<<"count nodes generates : "<<count_nodes<<endl;
+       generated.clear();
 }
 
-void SSSearch::generateAverageReport() {
+void SSSearch::generateExpandedReport() {
         
         string dominio = domain_name;
         string tarefa = problem_name2;
         string heuristica = heuristic_name2;
+        double total_nodes = 0.0;
+        for (map<Node2, double>::iterator iter = expanded.begin(); iter != expanded.end(); iter++) {
+            double n = iter->second;
+            total_nodes += n;
+        }
+        cout<<"count nodes expanded : "<<(double)total_nodes/(double)ss_probes<<endl;
 
         cout<<"dominio = "<<dominio<<endl;
         cout<<"tarefa = "<<tarefa<<endl;
@@ -337,7 +308,7 @@ void SSSearch::generateAverageReport() {
             int k = 0;
             vector<long> f;
             vector<double> q;
-            for (map<Node2, double>::iterator iter = average.begin(); iter != average.end(); iter++) {
+            for (map<Node2, double>::iterator iter = expanded.begin(); iter != expanded.end(); iter++) {
                  Node2 n = iter->first;
                 
                  if (i == n.getL()) {
@@ -364,7 +335,7 @@ void SSSearch::generateAverageReport() {
             
         }
         output.close();
-        average.clear();
+        expanded.clear();
 }
 
 

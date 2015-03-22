@@ -59,9 +59,9 @@ private:
 	map<Type, SSNode> queue;
         map<Type, double> S; 
         vector<SSNode> vweight;
-        std::map<Node2, double> collector;
+        std::map<Node2, double> expanded;
 
-        std::map<Node2, double> average;
+        std::map<Node2, double> generated;
         double totalPrediction;         
 
 	std::vector<Heuristic*> heuristics; 
@@ -97,9 +97,9 @@ public:
 	enum{A_LOT=10000000};
 	SSSearch(const Options &opts);
 	virtual ~SSSearch();
-        void printQueue();
-        void generateReport(int id);
-        void generateAverageReport();
+        void printQueue(); 
+        void generateExpandedReport();
+        void generateGeneratedReport();
         double getProbingResult();
         void probe();
         void predict(int probes);
