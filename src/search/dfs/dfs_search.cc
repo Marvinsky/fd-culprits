@@ -102,11 +102,13 @@ void DFSSearch::statistics() const {
 }
 
 SearchStatus DFSSearch::step() {
-        heuristics[0]->evaluate(g_initial_value());
+
+        const GlobalState &initial_state = g_initial_state();
+
+        heuristics[0]->evaluate(initial_state);
         int h_initial = heuristics[0]->get_value();
         cout<<"h_initial = "<<h_initial<<endl;
         
-        const GlobalState &initial_state = g_initial_state(); 
         StateID initial_state_id = initial_state.get_id();
         SSNode node(initial_state_id, h_initial, 0);
     
@@ -116,13 +118,13 @@ SearchStatus DFSSearch::step() {
 
         while (!queue.empty()) {
               SSNode nodecp = queue.top();
-              int g = nodecp.g_value;
-              cout<<"Raiz: h = "<<nodecp.h_value<<", g = "<<g<<", f = "<<nodecp.h_value + g<<"\n";
+              int g = nodecp.get_g_value();
+              cout<<"Raiz: h = "<<nodecp.get_h_value()<<", g = "<<g<<", f = "<<nodecp.get_h_value() + g<<"\n";
 	      queue.pop();
 
-              StateID state_id = nodecp.id;
+              StateID state_id = nodecp.get_id();
 
-              Node2 node2(nodecp.h_value + g, g);
+              Node2 node2(nodecp.get_h_value() + g, g);
 
               if (collector.insert(pair<Node2, double>(node2, count_nodes)).second) {
 
@@ -135,10 +137,10 @@ SearchStatus DFSSearch::step() {
              
               std::vector<const GlobalOperator *> applicable_ops;
 
-              GlobalState global_state = g_state_registry->lookup_state(nodecp.id);                
+              GlobalState global_state = g_state_registry->lookup_state(nodecp.get_id());                
               g_successor_generator->generate_applicable_ops(global_state, applicable_ops);
  
-	      for (size_t int i = 0; i < applicable_ops.size(); ++i) {
+	      for (size_t i = 0; i < applicable_ops.size(); ++i) {
                   const GlobalOperator *op = applicable_ops[i];
                   GlobalState child =  g_state_registry->get_successor_state(global_state, *op);
 
@@ -147,10 +149,10 @@ SearchStatus DFSSearch::step() {
 
 
                   SSNode succ_node(child.get_id(), succ_h, g + 1);
-                  cout<<"\tNode generated: h = "<<succ_h<<", g = "<<succ_node.g_value<<", f = "<<succ_h + succ_node.g_value<<"\n";
+                  cout<<"\tNode generated: h = "<<succ_h<<", g = "<<succ_node.get_g_value()<<", f = "<<succ_h + succ_node.get_g_value()<<"\n";
 
-                  if (succ_h + succ_node.g_value <= depth) {
-                     cout<<"\tNode generated: h = "<<succ_h<<", g = "<<succ_node.g_value<<", f = "<<succ_h + succ_node.g_value<<"\n";
+                  if (succ_h + succ_node.get_g_value() <= depth) {
+                     cout<<"\tNode generated: h = "<<succ_h<<", g = "<<succ_node.get_g_value()<<", f = "<<succ_h + succ_node.get_g_value()<<"\n";
                      queue.push(succ_node);
                   } else {
                      cout<<"\tpruned!\n";
@@ -158,7 +160,9 @@ SearchStatus DFSSearch::step() {
               }
         }
  
-        return SOLVED
+        return SOLVED;
+}
+
 pair<SearchNode, bool> DFSSearch::fetch_next_node() {
     /* TODO: The bulk of this code deals with multi-path dependence,
        which is a bit unfortunate since that is a special case that
