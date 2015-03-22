@@ -158,12 +158,14 @@ HEADERS += pdbs/canonical_pdbs_heuristic.h \
            pdbs/util.h \
            pdbs/zero_one_pdbs_heuristic.h \
 
-##HEADERS += ss/type_child.h \
-##           ss/type_children.h \
-##           ss/type.h \
-##           ss/type_system.h \
-##           ss/node2.h \
-##           ss/ss_search.h \
+HEADERS += ss/type_child.h \
+           ss/type_children.h \
+           ss/type.h \
+           ss/type_system.h \
+           ss/node2.h \
+           ss/ss_search.h \
+
+HEADERS += dfs/dfs_search.h \
 
 
 SOURCES = planner.cc $(HEADERS:%.h=%.cc)
