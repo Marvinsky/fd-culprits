@@ -134,7 +134,7 @@ SearchStatus DFSSearch::step() {
                  q++;
                  iter->second = q;
               }
-             
+              count_nodes++;
               std::vector<const GlobalOperator *> applicable_ops;
 
               GlobalState global_state = g_state_registry->lookup_state(nodecp.get_id());                
@@ -160,7 +160,68 @@ SearchStatus DFSSearch::step() {
               }
         }
  
-        return SOLVED;
+        cout<<"end expansion of nodes finished."<<endl;
+        cout<<"Total of nodes expanded: "<<count_nodes<<endl;
+        int nodes_total = 0;
+        for (map<Node2, int>::iterator iter = collector.begin(); iter != collector.end(); iter++) {
+            Node2 n = iter->first;
+  	    int q = iter->second;
+            nodes_total += q;  
+        }
+        cout<<"nodes_total = "<<nodes_total<<endl;
+        cout<<"collector.size() = "<<collector.size()<<endl;
+
+
+        ofstream output;
+    	string dominio = domain_name;
+    	string tarefa =  problem_name2;
+    	string heuristica = heuristic_name2;
+    	cout<<"changing the code."<<endl;
+    	cout<<"dominio = "<<dominio<<endl;
+    	cout<<"tarefa = "<<tarefa<<endl;
+    	cout<<"heuristica = "<<heuristica<<endl;
+
+    	string directoryDomain = "mkdir /home/marvin/marvin/testdfs/"+heuristica+"/reportdfs/"+dominio;
+    	system(directoryDomain.c_str());
+
+    	string directoryFdist = "mkdir /home/marvin/marvin/testdfs/"+heuristica+"/reportdfs/"+dominio+"/fdist/";
+    	system(directoryFdist.c_str());
+
+    	string outputFile = "/home/marvin/marvin/testdfs/"+heuristica+"/reportdfs/"+dominio+"/fdist/"+tarefa;
+    	cout<<"outputFile = "<<outputFile.c_str()<<endl;
+    	output.open(outputFile.c_str());
+    	output<<"\t"<<outputFile.c_str()<<"\n";
+    	output<<"totalniveles: "<<depth<<"\n";
+    	output<<"threshold: "<<depth<<"\n\n";
+
+    	for (int i = 0; i <= depth; i++) {
+       		int k = 0;
+       		vector<int> f;
+       		vector<int> q;
+       		for (map<Node2, int>::iterator iter = collector.begin(); iter != collector.end(); iter++) {
+           		Node2 n = iter->first;
+           		if (i == n.getL()) {
+              		    k++;
+              		    f.push_back(n.getF());
+              		    q.push_back(iter->second);
+           	        }      
+                }
+       		cout<<"g:"<<i<<"\n";
+       		output<<"g:"<<i<<"\n";
+
+       		cout<<"size: "<<k<<"\n";
+       		output<<"size: "<<k<<"\n";
+
+       		for (int j = 0; j < f.size(); j++) {
+           		cout<<"\tf: "<<f.at(j)<<"\tq: "<<q.at(j)<<"\n";
+           		output<<"\tf: "<<f.at(j)<<"\tq: "<<q.at(j)<<"\n";
+       		}
+       		output<<"\n";
+       		cout<<"\n";
+    	}
+    	output.close();
+    
+   	return SOLVED;
 }
 
 pair<SearchNode, bool> DFSSearch::fetch_next_node() {
