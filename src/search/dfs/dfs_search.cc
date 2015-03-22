@@ -35,7 +35,6 @@ DFSSearch::DFSSearch(
 }
 
 void DFSSearch::initialize() {
-srand(1);
     //TODO children classes should output which kind of search
     cout << "Conducting best first search"
          << (reopen_closed_nodes ? " with" : " without")
@@ -70,20 +69,13 @@ srand(1);
     for (set<Heuristic *>::iterator it = hset.begin(); it != hset.end(); ++it) {
         heuristics.push_back(*it);
     }
-    
 
     assert(!heuristics.empty());
 
     const GlobalState &initial_state = g_initial_state();
-    int min_h=INT_MAX/2;
-    cout<<"77: heuristics.size() = "<<heuristics.size()<<endl;
-    for (size_t i = 0; i < heuristics.size(); ++i){
+    for (size_t i = 0; i < heuristics.size(); ++i)
         heuristics[i]->evaluate(initial_state);
-        cout<<i<<" = "<<heuristics[i]->get_heuristic()<<endl;
-	min_h=min(min_h,heuristics[i]->get_heuristic());
-    }
-    //open_list->evaluate(0, false);
-    open_list->evaluate2(0, min_h);
+    open_list->evaluate(0, false);
     search_progress.inc_evaluated_states();
     search_progress.inc_evaluations(heuristics.size());
 
@@ -100,7 +92,7 @@ srand(1);
         node.open_initial(heuristics[0]->get_value());
 
         open_list->insert(initial_state.get_id());
-    } 
+    }
 }
 
 
