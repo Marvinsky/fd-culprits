@@ -108,8 +108,12 @@ SearchStatus DFSSearch::step() {
 
         const GlobalState &initial_state = g_initial_state();
 
-        heuristics[0]->evaluate(initial_state);
-        int h_initial = heuristics[0]->get_value();
+        int hmax = 0; 
+        for (size_t i = 0; i < heuristics.size(); i++) {
+            heuristics[i]->evaluate(initial_state);
+            hmax = max(hmax, heuristics[i]->get_heuristic());
+        }
+        int h_initial = hmax;
         cout<<"h_initial = "<<h_initial<<endl;
         
         StateID initial_state_id = initial_state.get_id();
@@ -122,7 +126,7 @@ SearchStatus DFSSearch::step() {
         while (!queue.empty()) {
               SSNode nodecp = queue.top();
               int g = nodecp.get_g_value();
-              cout<<"Raiz: h = "<<nodecp.get_h_value()<<", g = "<<g<<", f = "<<nodecp.get_h_value() + g<<"\n";
+              //cout<<"Raiz: h = "<<nodecp.get_h_value()<<", g = "<<g<<", f = "<<nodecp.get_h_value() + g<<"\n";
 	      queue.pop();
 
               StateID state_id = nodecp.get_id();
@@ -158,11 +162,11 @@ SearchStatus DFSSearch::step() {
               it = ret.first;
 
               if (ret.second) {
-                 cout<<"new node is added."<<endl;
+                 //cout<<"new node is added."<<endl;
               }  else {
-                 cout<<"node is updated."<<endl;
+                 //cout<<"node is updated."<<endl;
                  it->second += amount;
-                 cout<<"new = "<<it->second<<endl;
+                 //cout<<"new = "<<it->second<<endl;
               }
                
  
@@ -170,34 +174,40 @@ SearchStatus DFSSearch::step() {
                   const GlobalOperator *op = applicable_ops[i];
                   GlobalState child =  g_state_registry->get_successor_state(global_state, *op);
 
-                  heuristics[0]->evaluate(child); 
-                  int succ_h = heuristics[0]->get_heuristic();
+                  
+                  int hmax_value = 0; 
+                  for (size_t i = 0; i < heuristics.size(); i++) {
+            	      heuristics[i]->evaluate(child);
+            	      hmax_value = max(hmax_value, heuristics[i]->get_heuristic());
+        	  }	   
+
+                  int succ_h = hmax_value;
 
                   search_progress.inc_generated();
 
 
                   SSNode succ_node(child.get_id(), succ_h, g + 1);
-                  cout<<"\tNode generated: h = "<<succ_h<<", g = "<<succ_node.get_g_value()<<", f = "<<succ_h + succ_node.get_g_value()<<"\n";
+                  //cout<<"\tNode generated: h = "<<succ_h<<", g = "<<succ_node.get_g_value()<<", f = "<<succ_h + succ_node.get_g_value()<<"\n";
 
                   if (succ_h + succ_node.get_g_value() <= depth) {
-                     cout<<"\tNode generated: h = "<<succ_h<<", g = "<<succ_node.get_g_value()<<", f = "<<succ_h + succ_node.get_g_value()<<"\n";
+                     //cout<<"\tNode generated: h = "<<succ_h<<", g = "<<succ_node.get_g_value()<<", f = "<<succ_h + succ_node.get_g_value()<<"\n";
                      queue.push(succ_node);
                   } else {
-                     cout<<"\tpruned!\n";
+                     //cout<<"\tpruned!\n";
                   }
               }
         }
  
         cout<<"end expansion of nodes finished."<<endl;
         cout<<"Total of nodes expanded: "<<count_nodes<<endl;
-        cout<<"Abisrror Zarate Marvin"<<endl;
-        int nodes_total = 0;
+        
+        double nodes_total = 0;
         for (map<Node2, double>::iterator iter = collector.begin(); iter != collector.end(); iter++) {
             
-  	    int q = iter->second;
+  	    double q = iter->second;
             nodes_total += q;  
         }
-        cout<<"nodes_total = "<<nodes_total<<endl;
+        cout<<"Total of nodes generated: "<<nodes_total<<endl;
         cout<<"collector.size() = "<<collector.size()<<endl;
 
 

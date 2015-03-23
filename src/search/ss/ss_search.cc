@@ -11,6 +11,9 @@
 
 #include <iostream>
 #include <fstream>
+#include "../ext/boost/dynamic_bitset.hpp"
+#include "../global_state.h"
+
 
 SSSearch::SSSearch(const Options &opts) : SearchEngine(opts), current_state(g_initial_state()) {
 	//rg = opts.get<double>("rg");
@@ -56,8 +59,10 @@ void SSSearch::predict(int probes) {
             cout<<"**********"<<endl;
         }
         cout<<"\ntotalPrediction : "<<totalPrediction<<"\n";
+        generateSSCCReport();
         generateGeneratedReport();
         generateExpandedReport();
+
 }
 
 void SSSearch::probe()
@@ -68,21 +73,66 @@ void SSSearch::probe()
 
         queue.clear();
 	// evaluating the initial state
-	heuristic->evaluate(g_initial_state());
-	if (heuristic->is_dead_end())
-	{
-		assert(heuristic->dead_ends_are_reliable());
-		cout << "Initial state is a dead end." << endl;
-		exit(0);
-	}
-	initial_value = heuristic->get_value();
+        int min_h = INT_MAX/2;
+        for (size_t i = 0; i < heuristics.size(); i++) {
+            heuristics[i]->evaluate(g_initial_state());
+            min_h = min(min_h, heuristics[i]->get_heuristic());
+        }
+
+	initial_value = min_h;
 
         //for the open domains the heuristic is set to six
-        threshold = 2*initial_value;
+        threshold = 12;//2*initial_value;
 
-        SSNode node;
         const GlobalState &initial_state = g_initial_state();
-        StateID initial_state_id = initial_state.get_id();
+        vector<int> h_initial_v;
+	boost::dynamic_bitset<> b_initial_v(heuristics.size()); 
+        for (size_t i = 0; i < heuristics.size(); ++i) {
+             heuristics[i]->evaluate(initial_state);
+             h_initial_v.push_back(heuristics[i]->get_heuristic());            	
+        }
+        int max_h_initial_value = 0;
+        for (size_t i = 0; i < h_initial_v.size(); i++) {
+            int a = h_initial_v.at(i);
+            if (a > max_h_initial_value) {
+                max_h_initial_value = a;
+            }
+        }
+        
+        cout<<"\tthreshold: "<<threshold<<endl;
+        //cout<<"\nprint h_initial_v\n";
+	for (size_t i = 0; i < h_initial_v.size(); i++) {
+            int h_value = h_initial_v.at(i);
+            //cout<<h_value;
+            if (i != h_initial_v.size() - 1) {
+               //cout<<"/";
+            }
+            if (h_value <= threshold) {
+               b_initial_v.set(i);
+            }
+        }
+        
+        //cout<<"\nprint b_initial_v\n";
+        for (size_t i = 0; i< b_initial_v.size(); i++) {
+            //cout<<b_initial_v.test(i);
+            if (i != b_initial_v.size() -1) {
+               //cout<<"/";
+            }
+        }
+        std::vector<const GlobalOperator*> applicable_ops0;
+        GlobalState global_state0 = g_state_registry->lookup_state(g_initial_state().get_id()); 
+        g_successor_generator->generate_applicable_ops(global_state0, applicable_ops0);
+
+        //count nodes generated
+        double amount_initial = (double)applicable_ops0.size();
+
+
+ 	collector.insert(std::pair<boost::dynamic_bitset<>, double>(b_initial_v, 1 + amount_initial));
+
+        //cout<<"\n";
+        SSNode node;
+        const GlobalState &initial_state2 = g_initial_state();
+        StateID initial_state_id = initial_state2.get_id();
         node.setId(initial_state_id);
         node.setWeight(1.0);
 	/*
@@ -130,11 +180,11 @@ void SSSearch::probe()
                 it0 = ret0.first;
 
                 if (ret0.second) {
-                    cout<<"new node expanded is added."<<endl;
+                    //cout<<"new node expanded is added."<<endl;
                 } else {
-                    cout<<"node expanded is being updated."<<endl;
+                    //cout<<"node expanded is being updated."<<endl;
                     it0->second += s.getWeight();
-                    cout<<"it0->second = "<<it0->second<<endl;
+                    //cout<<"it0->second = "<<it0->second<<endl;
                 }
 
                 //end count node
@@ -158,11 +208,11 @@ void SSSearch::probe()
 
 
                 if (ret.second) {
-                   cout<<"new node is added."<<endl;
+                   //cout<<"new node is added."<<endl;
                 } else {
-                   cout<<"old is being updated."<<endl;
+                   //cout<<"old is being updated."<<endl;
                    it->second += amount*w;
-                   cout<<"new = "<<it->second<<endl;
+                   //cout<<"new = "<<it->second<<endl;
                 }
                  //end count nodes generated
 		for (size_t i = 0; i < applicable_ops.size(); ++i)
@@ -170,17 +220,111 @@ void SSSearch::probe()
                         const GlobalOperator *op = applicable_ops[i];
                         GlobalState child = g_state_registry->get_successor_state(global_state, *op);
 
-                        heuristic->evaluate(child);	
+			vector<int> h_child_v;
+                  	boost::dynamic_bitset<> b_child_v(heuristics.size());
+                  	vector<int> f_child_v;
+                  	boost::dynamic_bitset<> b_f_child_v(heuristics.size());
+                  	vector<string> heur_name_v;
 
-			if(!heuristic->is_dead_end())
-			{
-				h = heuristic->get_heuristic();
+                  	for (size_t i = 0; i < heuristics.size(); ++i) {
+                      		heuristics[i]->evaluate(child);
+                      		int new_heur = heuristics[i]->get_heuristic();
+                      		string heur_name = heuristics[i]->get_heur_name();
+                      		h_child_v.push_back(new_heur);
+                      		f_child_v.push_back(new_heur + g + 1);
+                      		heur_name_v.push_back(heur_name);
+                  	}
 
-			}	
-                        
-			//cout<<"\tChild: h = "<< h <<" g = "<< g + 1 <<" f = "<< h + g + 1 <<" w = "<<w<<endl; 
 
-                        if (h + g + 1 <= threshold) {
+                  	//cout<<"dump beging"<<endl;
+                  	//child.dump_inline();
+                  	//cout<<"dump end"<<endl;
+                 
+                  	//cout<<"h = "<<heuristics[0]->get_heuristic()<<", f = "<<heuristics[0]->get_heuristic() + g + get_adjusted_cost(*op)<<endl;
+                  
+                  	//cout<<"*******************Child #"<<i<<"********************"<<endl;
+                  	//working with h-value
+                  	//cout<<"\nprint h_child_v\n";
+                  	//cout<<"g = "<<g + 1<<endl;
+                  	for (size_t i = 0; i < heur_name_v.size(); i++) {
+                      		//cout<<heur_name_v.at(i);
+                      		if (i != heur_name_v.size() - 1) {
+                         		//cout<<"/";
+                      		}
+                  	}
+                  	heur_name_v.clear();
+                  	//cout<<"\n"; 
+                  	for (size_t i = 0; i < h_child_v.size(); i++) {
+                      		int h_value = h_child_v.at(i);
+                      		//cout<<h_value;
+                      		if (i != h_child_v.size() -1) {
+                         		//cout<<"/";
+                      		}
+                      		if (h_value + g + get_adjusted_cost(*op)  <= threshold) {
+                          		//b_child_v.insert(b_child_v.begin() + i, true);
+                          		b_child_v.set(i);
+                      		}
+                  	}
+             
+	     		std::vector<const GlobalOperator *> applicable_ops_2;
+             
+
+             		GlobalState global_state_2 = g_state_registry->lookup_state(child.get_id());                
+             		g_successor_generator->generate_applicable_ops(global_state_2, applicable_ops_2);
+             
+             		int amount = applicable_ops_2.size();
+                
+             		std::pair<std::map<boost::dynamic_bitset<>, double>::iterator, bool> ret2;
+          
+             		std::map<boost::dynamic_bitset<>, double>::iterator it2; 
+      
+
+             		if (b_child_v.count() > 0) {
+ 	     			ret2 = collector.insert(std::pair<boost::dynamic_bitset<>, double>(b_child_v, amount*w));
+             			it2 = ret2.first;
+
+             			if (ret2.second) {
+					//cout<<"raiz bc new is added"<<endl;
+             			} else {
+                			//cout<<"raiz bc old is being updated"<<endl; 
+                			it2->second += amount*w;
+                			//cout<<", newcc : "<<it2->second<<"\n"; 
+             			}
+             		}
+
+     
+                  	//cout<<"\nprint b_child_v\n";
+                  	for (size_t i = 0; i< b_child_v.size(); i++) {
+                       		//cout<<b_child_v.test(i);
+                       		if (i != b_child_v.size() -1) {
+                          		//cout<<"/";                         
+                       		}
+                  	}
+                 
+                  	// working with f-value
+                  	//cout<<"\nprint f_child_v\n";                   
+                  	for (size_t i = 0; i < f_child_v.size(); i++) {
+                      		int f_value = f_child_v.at(i);
+                      		//cout<<f_value;
+                      		if (i != f_child_v.size() -1) {
+                         		//cout<<"/";
+                      		}
+                      		if (f_value <= threshold) {
+                          		//b_f_child_v.insert(b_f_child_v.begin() + i, true);
+                          		b_f_child_v.set(i);
+                      		} 
+                  	}
+                   
+                  	//cout<<"\nprint f_b_child_v\n";
+                  	for (size_t i = 0; i < b_f_child_v.size(); i++) {
+				//cout<<b_f_child_v.test(i);
+                        	if (i != b_f_child_v.size() -1) {
+                           		//cout<<"/";
+                        	}
+                  	}
+
+
+                        if (b_child_v.count() > 0) {
 			   Type object = sampler->getType(child.get_id(), h,  1);
 			    
                            object.setLevel( g + 1 );
@@ -338,6 +482,21 @@ void SSSearch::generateExpandedReport() {
         expanded.clear();
 }
 
+void SSSearch::generateSSCCReport() {
+       for (map<boost::dynamic_bitset<>, double>::iterator iter = collector.begin(); iter != collector.end(); iter++) {
+		boost::dynamic_bitset<> b_node_v = iter->first;
+                double cc = iter->second;
+                cout<<"bc: ";
+		for (size_t i = 0; i < b_node_v.size(); i++) {
+			cout<<b_node_v.test(i);
+			if (i != b_node_v.size() - 1) {
+				cout<<"/";
+			}
+		}
+		cout<<", cc: "<<(double)cc/(double)ss_probes<<"\n";
+	}
+	collector.clear();
+}
 
 double SSSearch::getProbingResult() {
         double expansions = 0;

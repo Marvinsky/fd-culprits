@@ -6978,9 +6978,10 @@
  ss/../search_node_info.h ss/../search_progress.h ss/../timer.h \
  ss/../heuristic.h ss/type.h ss/type_children.h ss/type_child.h \
  ss/type_system.h ss/../state_id.h ss/node2.h ss/../randomc/randomc.h \
- ss/../randomc/mersenne.cpp ss/../randomc/randomc.h ss/../globals.h \
- ss/../option_parser.h ss/../option_parser_util.h ext/tree.hh \
- ext/tree_util.hh ext/tree.hh ext/boost/any.hpp ext/boost/config.hpp \
+ ss/../randomc/mersenne.cpp ss/../randomc/randomc.h \
+ ss/../ext/boost/dynamic_bitset.hpp \
+ ext/boost/dynamic_bitset/dynamic_bitset.hpp \
+ ext/boost/dynamic_bitset/config.hpp ext/boost/config.hpp \
  ext/boost/config/user.hpp ext/boost/config/select_compiler_config.hpp \
  ext/boost/config/compiler/gcc.hpp \
  ext/boost/config/select_stdlib_config.hpp \
@@ -6988,8 +6989,13 @@
  ext/boost/config/stdlib/libstdcpp3.hpp \
  ext/boost/config/select_platform_config.hpp \
  ext/boost/config/platform/linux.hpp ext/boost/config/posix_features.hpp \
- ext/boost/config/suffix.hpp ext/boost/type_traits/remove_reference.hpp \
- ext/boost/detail/workaround.hpp \
+ ext/boost/config/suffix.hpp ext/boost/detail/workaround.hpp \
+ ext/boost/dynamic_bitset_fwd.hpp ext/boost/detail/dynamic_bitset.hpp \
+ ext/boost/detail/iterator.hpp ext/boost/move/move.hpp \
+ ext/boost/move/detail/config_begin.hpp ext/boost/move/utility.hpp \
+ ext/boost/move/core.hpp ext/boost/move/detail/config_end.hpp \
+ ext/boost/move/detail/meta_utils.hpp \
+ ext/boost/type_traits/remove_reference.hpp \
  ext/boost/type_traits/detail/type_trait_def.hpp \
  ext/boost/type_traits/detail/template_arity_spec.hpp \
  ext/boost/mpl/int.hpp ext/boost/mpl/int_fwd.hpp \
@@ -7023,14 +7029,15 @@
  ext/boost/mpl/aux_/config/overload_resolution.hpp \
  ext/boost/mpl/aux_/lambda_support.hpp \
  ext/boost/type_traits/detail/type_trait_undef.hpp \
- ext/boost/type_traits/decay.hpp ext/boost/type_traits/config.hpp \
- ext/boost/type_traits/is_array.hpp \
+ ext/boost/move/iterator.hpp ext/boost/move/traits.hpp \
+ ext/boost/type_traits/has_trivial_destructor.hpp \
+ ext/boost/type_traits/config.hpp ext/boost/type_traits/intrinsics.hpp \
+ ext/boost/type_traits/is_same.hpp \
  ext/boost/type_traits/detail/bool_trait_def.hpp \
  ext/boost/type_traits/integral_constant.hpp ext/boost/mpl/bool.hpp \
  ext/boost/mpl/bool_fwd.hpp ext/boost/mpl/integral_c.hpp \
  ext/boost/mpl/integral_c_fwd.hpp \
  ext/boost/type_traits/detail/bool_trait_undef.hpp \
- ext/boost/type_traits/is_function.hpp \
  ext/boost/type_traits/is_reference.hpp \
  ext/boost/type_traits/is_lvalue_reference.hpp \
  ext/boost/type_traits/is_rvalue_reference.hpp \
@@ -7040,6 +7047,38 @@
  ext/boost/type_traits/detail/ice_and.hpp \
  ext/boost/type_traits/detail/ice_not.hpp \
  ext/boost/type_traits/detail/ice_eq.hpp \
+ ext/boost/type_traits/is_volatile.hpp \
+ ext/boost/type_traits/detail/cv_traits_impl.hpp \
+ ext/boost/type_traits/is_pod.hpp ext/boost/type_traits/is_void.hpp \
+ ext/boost/type_traits/is_scalar.hpp \
+ ext/boost/type_traits/is_arithmetic.hpp \
+ ext/boost/type_traits/is_integral.hpp ext/boost/type_traits/is_float.hpp \
+ ext/boost/type_traits/is_enum.hpp ext/boost/type_traits/is_pointer.hpp \
+ ext/boost/type_traits/is_member_pointer.hpp \
+ ext/boost/type_traits/is_member_function_pointer.hpp \
+ ext/boost/type_traits/detail/is_mem_fun_pointer_impl.hpp \
+ ext/boost/type_traits/remove_cv.hpp \
+ ext/boost/type_traits/is_nothrow_move_constructible.hpp \
+ ext/boost/type_traits/has_trivial_move_constructor.hpp \
+ ext/boost/type_traits/has_nothrow_copy.hpp \
+ ext/boost/type_traits/has_trivial_copy.hpp \
+ ext/boost/type_traits/is_array.hpp ext/boost/utility/declval.hpp \
+ ext/boost/type_traits/add_rvalue_reference.hpp \
+ ext/boost/utility/enable_if.hpp ext/boost/core/enable_if.hpp \
+ ext/boost/type_traits/is_nothrow_move_assignable.hpp \
+ ext/boost/type_traits/has_trivial_move_assign.hpp \
+ ext/boost/type_traits/is_const.hpp \
+ ext/boost/type_traits/has_nothrow_assign.hpp \
+ ext/boost/type_traits/has_trivial_assign.hpp \
+ ext/boost/move/algorithm.hpp ext/boost/detail/no_exceptions_support.hpp \
+ ext/boost/core/no_exceptions_support.hpp ext/boost/limits.hpp \
+ ext/boost/pending/lowest_bit.hpp ext/boost/pending/integer_log2.hpp \
+ ext/boost/integer/integer_log2.hpp ext/boost/static_assert.hpp \
+ ext/boost/utility/addressof.hpp ext/boost/core/addressof.hpp \
+ ext/boost/throw_exception.hpp ss/../globals.h ss/../option_parser.h \
+ ss/../option_parser_util.h ext/tree.hh ext/tree_util.hh ext/tree.hh \
+ ext/boost/any.hpp ext/boost/type_traits/decay.hpp \
+ ext/boost/type_traits/is_function.hpp \
  ext/boost/type_traits/detail/false_result.hpp \
  ext/boost/type_traits/detail/is_function_ptr_helper.hpp \
  ext/boost/type_traits/remove_bounds.hpp \
@@ -7077,12 +7116,7 @@
  ext/boost/preprocessor/tuple/rem.hpp \
  ext/boost/preprocessor/variadic/elem.hpp \
  ext/boost/preprocessor/arithmetic/sub.hpp ext/boost/mpl/identity.hpp \
- ext/boost/type_traits/add_reference.hpp \
- ext/boost/type_traits/is_const.hpp \
- ext/boost/type_traits/detail/cv_traits_impl.hpp \
- ext/boost/throw_exception.hpp ext/boost/static_assert.hpp \
- ext/boost/utility/enable_if.hpp ext/boost/core/enable_if.hpp \
- ext/boost/type_traits/is_same.hpp ss/../successor_generator.h \
+ ext/boost/type_traits/add_reference.hpp ss/../successor_generator.h \
  ss/../g_evaluator.h ss/../sum_evaluator.h ss/../combining_evaluator.h \
  ss/../plugin.h ss/../open_lists/standard_scalar_open_list.h \
  ss/../open_lists/open_list.h ss/../open_lists/../evaluator.h \
@@ -14207,9 +14241,10 @@
  ss/../search_node_info.h ss/../search_progress.h ss/../timer.h \
  ss/../heuristic.h ss/type.h ss/type_children.h ss/type_child.h \
  ss/type_system.h ss/../state_id.h ss/node2.h ss/../randomc/randomc.h \
- ss/../randomc/mersenne.cpp ss/../randomc/randomc.h ss/../globals.h \
- ss/../option_parser.h ss/../option_parser_util.h ext/tree.hh \
- ext/tree_util.hh ext/tree.hh ext/boost/any.hpp ext/boost/config.hpp \
+ ss/../randomc/mersenne.cpp ss/../randomc/randomc.h \
+ ss/../ext/boost/dynamic_bitset.hpp \
+ ext/boost/dynamic_bitset/dynamic_bitset.hpp \
+ ext/boost/dynamic_bitset/config.hpp ext/boost/config.hpp \
  ext/boost/config/user.hpp ext/boost/config/select_compiler_config.hpp \
  ext/boost/config/compiler/gcc.hpp \
  ext/boost/config/select_stdlib_config.hpp \
@@ -14217,8 +14252,13 @@
  ext/boost/config/stdlib/libstdcpp3.hpp \
  ext/boost/config/select_platform_config.hpp \
  ext/boost/config/platform/linux.hpp ext/boost/config/posix_features.hpp \
- ext/boost/config/suffix.hpp ext/boost/type_traits/remove_reference.hpp \
- ext/boost/detail/workaround.hpp \
+ ext/boost/config/suffix.hpp ext/boost/detail/workaround.hpp \
+ ext/boost/dynamic_bitset_fwd.hpp ext/boost/detail/dynamic_bitset.hpp \
+ ext/boost/detail/iterator.hpp ext/boost/move/move.hpp \
+ ext/boost/move/detail/config_begin.hpp ext/boost/move/utility.hpp \
+ ext/boost/move/core.hpp ext/boost/move/detail/config_end.hpp \
+ ext/boost/move/detail/meta_utils.hpp \
+ ext/boost/type_traits/remove_reference.hpp \
  ext/boost/type_traits/detail/type_trait_def.hpp \
  ext/boost/type_traits/detail/template_arity_spec.hpp \
  ext/boost/mpl/int.hpp ext/boost/mpl/int_fwd.hpp \
@@ -14252,14 +14292,15 @@
  ext/boost/mpl/aux_/config/overload_resolution.hpp \
  ext/boost/mpl/aux_/lambda_support.hpp \
  ext/boost/type_traits/detail/type_trait_undef.hpp \
- ext/boost/type_traits/decay.hpp ext/boost/type_traits/config.hpp \
- ext/boost/type_traits/is_array.hpp \
+ ext/boost/move/iterator.hpp ext/boost/move/traits.hpp \
+ ext/boost/type_traits/has_trivial_destructor.hpp \
+ ext/boost/type_traits/config.hpp ext/boost/type_traits/intrinsics.hpp \
+ ext/boost/type_traits/is_same.hpp \
  ext/boost/type_traits/detail/bool_trait_def.hpp \
  ext/boost/type_traits/integral_constant.hpp ext/boost/mpl/bool.hpp \
  ext/boost/mpl/bool_fwd.hpp ext/boost/mpl/integral_c.hpp \
  ext/boost/mpl/integral_c_fwd.hpp \
  ext/boost/type_traits/detail/bool_trait_undef.hpp \
- ext/boost/type_traits/is_function.hpp \
  ext/boost/type_traits/is_reference.hpp \
  ext/boost/type_traits/is_lvalue_reference.hpp \
  ext/boost/type_traits/is_rvalue_reference.hpp \
@@ -14269,6 +14310,38 @@
  ext/boost/type_traits/detail/ice_and.hpp \
  ext/boost/type_traits/detail/ice_not.hpp \
  ext/boost/type_traits/detail/ice_eq.hpp \
+ ext/boost/type_traits/is_volatile.hpp \
+ ext/boost/type_traits/detail/cv_traits_impl.hpp \
+ ext/boost/type_traits/is_pod.hpp ext/boost/type_traits/is_void.hpp \
+ ext/boost/type_traits/is_scalar.hpp \
+ ext/boost/type_traits/is_arithmetic.hpp \
+ ext/boost/type_traits/is_integral.hpp ext/boost/type_traits/is_float.hpp \
+ ext/boost/type_traits/is_enum.hpp ext/boost/type_traits/is_pointer.hpp \
+ ext/boost/type_traits/is_member_pointer.hpp \
+ ext/boost/type_traits/is_member_function_pointer.hpp \
+ ext/boost/type_traits/detail/is_mem_fun_pointer_impl.hpp \
+ ext/boost/type_traits/remove_cv.hpp \
+ ext/boost/type_traits/is_nothrow_move_constructible.hpp \
+ ext/boost/type_traits/has_trivial_move_constructor.hpp \
+ ext/boost/type_traits/has_nothrow_copy.hpp \
+ ext/boost/type_traits/has_trivial_copy.hpp \
+ ext/boost/type_traits/is_array.hpp ext/boost/utility/declval.hpp \
+ ext/boost/type_traits/add_rvalue_reference.hpp \
+ ext/boost/utility/enable_if.hpp ext/boost/core/enable_if.hpp \
+ ext/boost/type_traits/is_nothrow_move_assignable.hpp \
+ ext/boost/type_traits/has_trivial_move_assign.hpp \
+ ext/boost/type_traits/is_const.hpp \
+ ext/boost/type_traits/has_nothrow_assign.hpp \
+ ext/boost/type_traits/has_trivial_assign.hpp \
+ ext/boost/move/algorithm.hpp ext/boost/detail/no_exceptions_support.hpp \
+ ext/boost/core/no_exceptions_support.hpp ext/boost/limits.hpp \
+ ext/boost/pending/lowest_bit.hpp ext/boost/pending/integer_log2.hpp \
+ ext/boost/integer/integer_log2.hpp ext/boost/static_assert.hpp \
+ ext/boost/utility/addressof.hpp ext/boost/core/addressof.hpp \
+ ext/boost/throw_exception.hpp ss/../globals.h ss/../option_parser.h \
+ ss/../option_parser_util.h ext/tree.hh ext/tree_util.hh ext/tree.hh \
+ ext/boost/any.hpp ext/boost/type_traits/decay.hpp \
+ ext/boost/type_traits/is_function.hpp \
  ext/boost/type_traits/detail/false_result.hpp \
  ext/boost/type_traits/detail/is_function_ptr_helper.hpp \
  ext/boost/type_traits/remove_bounds.hpp \
@@ -14306,12 +14379,7 @@
  ext/boost/preprocessor/tuple/rem.hpp \
  ext/boost/preprocessor/variadic/elem.hpp \
  ext/boost/preprocessor/arithmetic/sub.hpp ext/boost/mpl/identity.hpp \
- ext/boost/type_traits/add_reference.hpp \
- ext/boost/type_traits/is_const.hpp \
- ext/boost/type_traits/detail/cv_traits_impl.hpp \
- ext/boost/throw_exception.hpp ext/boost/static_assert.hpp \
- ext/boost/utility/enable_if.hpp ext/boost/core/enable_if.hpp \
- ext/boost/type_traits/is_same.hpp ss/../successor_generator.h \
+ ext/boost/type_traits/add_reference.hpp ss/../successor_generator.h \
  ss/../g_evaluator.h ss/../sum_evaluator.h ss/../combining_evaluator.h \
  ss/../plugin.h ss/../open_lists/standard_scalar_open_list.h \
  ss/../open_lists/open_list.h ss/../open_lists/../evaluator.h \
@@ -21436,9 +21504,10 @@
  ss/../search_node_info.h ss/../search_progress.h ss/../timer.h \
  ss/../heuristic.h ss/type.h ss/type_children.h ss/type_child.h \
  ss/type_system.h ss/../state_id.h ss/node2.h ss/../randomc/randomc.h \
- ss/../randomc/mersenne.cpp ss/../randomc/randomc.h ss/../globals.h \
- ss/../option_parser.h ss/../option_parser_util.h ext/tree.hh \
- ext/tree_util.hh ext/tree.hh ext/boost/any.hpp ext/boost/config.hpp \
+ ss/../randomc/mersenne.cpp ss/../randomc/randomc.h \
+ ss/../ext/boost/dynamic_bitset.hpp \
+ ext/boost/dynamic_bitset/dynamic_bitset.hpp \
+ ext/boost/dynamic_bitset/config.hpp ext/boost/config.hpp \
  ext/boost/config/user.hpp ext/boost/config/select_compiler_config.hpp \
  ext/boost/config/compiler/gcc.hpp \
  ext/boost/config/select_stdlib_config.hpp \
@@ -21446,8 +21515,13 @@
  ext/boost/config/stdlib/libstdcpp3.hpp \
  ext/boost/config/select_platform_config.hpp \
  ext/boost/config/platform/linux.hpp ext/boost/config/posix_features.hpp \
- ext/boost/config/suffix.hpp ext/boost/type_traits/remove_reference.hpp \
- ext/boost/detail/workaround.hpp \
+ ext/boost/config/suffix.hpp ext/boost/detail/workaround.hpp \
+ ext/boost/dynamic_bitset_fwd.hpp ext/boost/detail/dynamic_bitset.hpp \
+ ext/boost/detail/iterator.hpp ext/boost/move/move.hpp \
+ ext/boost/move/detail/config_begin.hpp ext/boost/move/utility.hpp \
+ ext/boost/move/core.hpp ext/boost/move/detail/config_end.hpp \
+ ext/boost/move/detail/meta_utils.hpp \
+ ext/boost/type_traits/remove_reference.hpp \
  ext/boost/type_traits/detail/type_trait_def.hpp \
  ext/boost/type_traits/detail/template_arity_spec.hpp \
  ext/boost/mpl/int.hpp ext/boost/mpl/int_fwd.hpp \
@@ -21481,14 +21555,15 @@
  ext/boost/mpl/aux_/config/overload_resolution.hpp \
  ext/boost/mpl/aux_/lambda_support.hpp \
  ext/boost/type_traits/detail/type_trait_undef.hpp \
- ext/boost/type_traits/decay.hpp ext/boost/type_traits/config.hpp \
- ext/boost/type_traits/is_array.hpp \
+ ext/boost/move/iterator.hpp ext/boost/move/traits.hpp \
+ ext/boost/type_traits/has_trivial_destructor.hpp \
+ ext/boost/type_traits/config.hpp ext/boost/type_traits/intrinsics.hpp \
+ ext/boost/type_traits/is_same.hpp \
  ext/boost/type_traits/detail/bool_trait_def.hpp \
  ext/boost/type_traits/integral_constant.hpp ext/boost/mpl/bool.hpp \
  ext/boost/mpl/bool_fwd.hpp ext/boost/mpl/integral_c.hpp \
  ext/boost/mpl/integral_c_fwd.hpp \
  ext/boost/type_traits/detail/bool_trait_undef.hpp \
- ext/boost/type_traits/is_function.hpp \
  ext/boost/type_traits/is_reference.hpp \
  ext/boost/type_traits/is_lvalue_reference.hpp \
  ext/boost/type_traits/is_rvalue_reference.hpp \
@@ -21498,6 +21573,38 @@
  ext/boost/type_traits/detail/ice_and.hpp \
  ext/boost/type_traits/detail/ice_not.hpp \
  ext/boost/type_traits/detail/ice_eq.hpp \
+ ext/boost/type_traits/is_volatile.hpp \
+ ext/boost/type_traits/detail/cv_traits_impl.hpp \
+ ext/boost/type_traits/is_pod.hpp ext/boost/type_traits/is_void.hpp \
+ ext/boost/type_traits/is_scalar.hpp \
+ ext/boost/type_traits/is_arithmetic.hpp \
+ ext/boost/type_traits/is_integral.hpp ext/boost/type_traits/is_float.hpp \
+ ext/boost/type_traits/is_enum.hpp ext/boost/type_traits/is_pointer.hpp \
+ ext/boost/type_traits/is_member_pointer.hpp \
+ ext/boost/type_traits/is_member_function_pointer.hpp \
+ ext/boost/type_traits/detail/is_mem_fun_pointer_impl.hpp \
+ ext/boost/type_traits/remove_cv.hpp \
+ ext/boost/type_traits/is_nothrow_move_constructible.hpp \
+ ext/boost/type_traits/has_trivial_move_constructor.hpp \
+ ext/boost/type_traits/has_nothrow_copy.hpp \
+ ext/boost/type_traits/has_trivial_copy.hpp \
+ ext/boost/type_traits/is_array.hpp ext/boost/utility/declval.hpp \
+ ext/boost/type_traits/add_rvalue_reference.hpp \
+ ext/boost/utility/enable_if.hpp ext/boost/core/enable_if.hpp \
+ ext/boost/type_traits/is_nothrow_move_assignable.hpp \
+ ext/boost/type_traits/has_trivial_move_assign.hpp \
+ ext/boost/type_traits/is_const.hpp \
+ ext/boost/type_traits/has_nothrow_assign.hpp \
+ ext/boost/type_traits/has_trivial_assign.hpp \
+ ext/boost/move/algorithm.hpp ext/boost/detail/no_exceptions_support.hpp \
+ ext/boost/core/no_exceptions_support.hpp ext/boost/limits.hpp \
+ ext/boost/pending/lowest_bit.hpp ext/boost/pending/integer_log2.hpp \
+ ext/boost/integer/integer_log2.hpp ext/boost/static_assert.hpp \
+ ext/boost/utility/addressof.hpp ext/boost/core/addressof.hpp \
+ ext/boost/throw_exception.hpp ss/../globals.h ss/../option_parser.h \
+ ss/../option_parser_util.h ext/tree.hh ext/tree_util.hh ext/tree.hh \
+ ext/boost/any.hpp ext/boost/type_traits/decay.hpp \
+ ext/boost/type_traits/is_function.hpp \
  ext/boost/type_traits/detail/false_result.hpp \
  ext/boost/type_traits/detail/is_function_ptr_helper.hpp \
  ext/boost/type_traits/remove_bounds.hpp \
@@ -21535,12 +21642,7 @@
  ext/boost/preprocessor/tuple/rem.hpp \
  ext/boost/preprocessor/variadic/elem.hpp \
  ext/boost/preprocessor/arithmetic/sub.hpp ext/boost/mpl/identity.hpp \
- ext/boost/type_traits/add_reference.hpp \
- ext/boost/type_traits/is_const.hpp \
- ext/boost/type_traits/detail/cv_traits_impl.hpp \
- ext/boost/throw_exception.hpp ext/boost/static_assert.hpp \
- ext/boost/utility/enable_if.hpp ext/boost/core/enable_if.hpp \
- ext/boost/type_traits/is_same.hpp ss/../successor_generator.h \
+ ext/boost/type_traits/add_reference.hpp ss/../successor_generator.h \
  ss/../g_evaluator.h ss/../sum_evaluator.h ss/../combining_evaluator.h \
  ss/../plugin.h ss/../open_lists/standard_scalar_open_list.h \
  ss/../open_lists/open_list.h ss/../open_lists/../evaluator.h \

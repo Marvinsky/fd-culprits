@@ -15,6 +15,7 @@
 #include "../randomc/randomc.h"
 #include "../randomc/mersenne.cpp"
 #include "../state_id.h"
+#include "../ext/boost/dynamic_bitset.hpp"
 
 class GlobalOperator;
 class Heuristic;
@@ -71,7 +72,6 @@ private:
 	int total_min;
 	int depth;
 	int initial_value;
-        int threshold;
         int count_value;
         int count_level_value;
         GlobalState current_state;
@@ -82,11 +82,12 @@ private:
 
         CRandomMersenne* RanGen2;
 
-
-	//void restart();
-	//void jump();
-	//bool global_restart();
 	void report_progress();
+
+        //ss+culprits
+        int threshold;
+        map<boost::dynamic_bitset<>,  double> collector;
+                
 
 protected:
 
@@ -100,6 +101,7 @@ public:
         void printQueue(); 
         void generateExpandedReport();
         void generateGeneratedReport();
+	void generateSSCCReport();
         double getProbingResult();
         void probe();
         void predict(int probes);
