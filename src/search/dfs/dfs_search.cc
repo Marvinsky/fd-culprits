@@ -164,7 +164,7 @@ SearchStatus DFSSearch::step() {
                  it->second += amount;
                  cout<<"new = "<<it->second<<endl;
               }
-              
+               
  
 	      for (size_t i = 0; i < applicable_ops.size(); ++i) {
                   const GlobalOperator *op = applicable_ops[i];
@@ -172,6 +172,8 @@ SearchStatus DFSSearch::step() {
 
                   heuristics[0]->evaluate(child); 
                   int succ_h = heuristics[0]->get_heuristic();
+
+                  search_progress.inc_generated();
 
 
                   SSNode succ_node(child.get_id(), succ_h, g + 1);

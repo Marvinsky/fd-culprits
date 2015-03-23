@@ -153,7 +153,7 @@ void SSSearch::probe()
                 std::pair<std::map<Node2, double>::iterator, bool> ret;
                 std::map<Node2, double>::iterator it;
 
-                ret = generated.insert(std::pair<Node2, double>(node2, amount));
+                ret = generated.insert(std::pair<Node2, double>(node2, amount*w));
                 it = ret.first;
 
 
@@ -161,7 +161,7 @@ void SSSearch::probe()
                    cout<<"new node is added."<<endl;
                 } else {
                    cout<<"old is being updated."<<endl;
-                   it->second += amount;
+                   it->second += amount*w;
                    cout<<"new = "<<it->second<<endl;
                 }
                  //end count nodes generated
@@ -177,7 +177,7 @@ void SSSearch::probe()
 				h = heuristic->get_heuristic();
 
 			}	
-
+                        
 			//cout<<"\tChild: h = "<< h <<" g = "<< g + 1 <<" f = "<< h + g + 1 <<" w = "<<w<<endl; 
 
                         if (h + g + 1 <= threshold) {
@@ -263,7 +263,7 @@ void SSSearch::generateGeneratedReport() {
            double n = iter->second;
            count_nodes += n;
        }
-       cout<<"count nodes generates : "<<count_nodes<<endl;
+       cout<<"count nodes generates : "<<count_nodes/(double)ss_probes<<endl;
        generated.clear();
 }
 
