@@ -17,12 +17,16 @@ class ZeroOnePDBsHeuristic;
 class PatternGenerationEdelkamp {
     TaskProxy *task;
     const int pdb_max_size; // maximum number of states for each pdb
-    const int num_collections;
+    const int colls;
     const int num_episodes;
     const double mutation_probability;
     const bool disjoint_patterns; // specifies whether patterns in each pattern collection need to be disjoint or not
+    const bool complementary; // specifies whether the heuristic is already set to complementary or strong
     const OperatorCost cost_type;
+    double time_limit;
+    Timer timer;
     std::vector<std::vector<std::vector<bool> > > pattern_collections; // all current pattern collections
+    bool best_fitness_was_duplicate;
 
     // store the fitness value of the best pattern collection over all episodes
     double best_fitness;
