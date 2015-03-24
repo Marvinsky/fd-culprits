@@ -85,5 +85,28 @@ extern std::string domain_name;
 extern std::string problem_name2;
 extern std::string heuristic_name2;
 extern int ss_probes;
+
+struct compare_patterns
+{
+  bool operator() (const vector<vector<int> >v1, const vector<vector<int> > v2){
+    if(v1.size()<v2.size()){
+        return true;
+    }   
+    int matching_patterns=0;
+    for(int i=0;i<v1.size();i++){
+      for(int j=0;j<v2.size();j++){
+        if(v1[i] == v2[j]){
+          matching_patterns++;
+          break;
+        }
+      }   
+    }   
+    if(matching_patterns==v1.size()){//v1 is included in v2, hence do not insert
+      //cout<<"All patterns included in one collection, not adding it"<<endl;
+      return false;
+    }   
+    return true;
+}
+
 extern std::set<std::vector<std::vector<int> >, compare_patterns> chosen_pattern_collections;//all current pattern collections
 #endif
