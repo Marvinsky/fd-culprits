@@ -483,18 +483,63 @@ void SSSearch::generateExpandedReport() {
 }
 
 void SSSearch::generateSSCCReport() {
+	string dominio = domain_name;
+        string tarefa = problem_name2;
+        string heuristica = heuristic_name2;
+
+	cout<<"dominio = "<<dominio<<endl;
+        cout<<"tarefa = "<<tarefa<<endl;
+        cout<<"heuristica = "<<heuristica<<endl;
+        int length = tarefa.size();
+        cout<<"length = "<<length<<endl;
+        size_t found = tarefa.find(".");
+        cout<<"found = "<<found<<endl; 
+        string name = tarefa.substr(0, found);
+        name += ".csv";
+        cout<<"name = "<<name<<endl;
+
+        string dirDomain = "mkdir /home/marvin/marvin/testss/"+heuristica+"/reportss/"+dominio;
+        string dirSSCC = "mkdir /home/marvin/marvin/testss/"+heuristica+"/reportss/"+dominio+"/bc";
+       
+        string outputFile = "/home/marvin/marvin/testss/"+heuristica+"/reportss/"+dominio+"/bc/"+name;
+
+        if (system(dirDomain.c_str())) {
+           cout<<"Directory: "<<heuristica<<" created."<<endl;
+        }
+
+        if (system(dirSSCC.c_str())) {
+           cout<<"Directory: SSCC created."<<endl;
+        }
+
+
+        ofstream output;
+
+        output.open(outputFile.c_str());
+
+        
+
+        for (size_t i = 0; i < heuristics.size(); i++) {
+            string heur_name = heuristics[i]->get_heur_name();
+            output<<heur_name<<"\n"; 
+        }
+
        for (map<boost::dynamic_bitset<>, double>::iterator iter = collector.begin(); iter != collector.end(); iter++) {
 		boost::dynamic_bitset<> b_node_v = iter->first;
                 double cc = iter->second;
-                cout<<"bc: ";
+                cout<<"bc(";
+                output<<"bc(";
 		for (size_t i = 0; i < b_node_v.size(); i++) {
 			cout<<b_node_v.test(i);
+                        output<<b_node_v.test(i);
 			if (i != b_node_v.size() - 1) {
 				cout<<"/";
+                                output<<"/";
 			}
 		}
-		cout<<", cc: "<<(double)cc/(double)ss_probes<<"\n";
+		cout<<")cc="<<(double)cc/(double)ss_probes<<"\n";
+                output<<")cc="<<(double)cc/(double)ss_probes<<"\n";
 	}
+        output.close();
 	collector.clear();
 }
 
