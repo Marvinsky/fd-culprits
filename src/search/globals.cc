@@ -403,3 +403,5 @@ string domain_name = "temp";
 string problem_name2 = "temp";
 string heuristic_name2 = "temp";
 int ss_probes = 0;
+
+set<std::vector<std::vector<int> >, compare_patterns > chosen_pattern_collections; //all current pattern collections

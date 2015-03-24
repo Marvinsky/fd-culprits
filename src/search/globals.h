@@ -4,6 +4,7 @@
 #include <iosfwd>
 #include <string>
 #include <vector>
+#include <set>
 
 class Axiom;
 class AxiomEvaluator;
@@ -84,5 +85,5 @@ extern std::string domain_name;
 extern std::string problem_name2;
 extern std::string heuristic_name2;
 extern int ss_probes;
-
+extern std::set<std::vector<std::vector<int> >, compare_patterns> chosen_pattern_collections;//all current pattern collections
 #endif
