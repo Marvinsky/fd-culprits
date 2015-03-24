@@ -2,8 +2,11 @@
 #define PDBS_CANONICAL_PDBS_HEURISTIC_H
 
 #include "../heuristic.h"
+#include <sstream>
 
 #include <vector>
+//#include  <boost/lexical_cast.hpp>
+
 
 // Implements the canonical heuristic function.
 class PDBHeuristic;
@@ -12,6 +15,7 @@ class CanonicalPDBsHeuristic : public Heuristic {
     std::vector<std::vector<PDBHeuristic *> > max_cliques; // final computed max_cliques
     std::vector<std::vector<bool> > are_additive; // pair of variables which are additive
     std::vector<PDBHeuristic *> pattern_databases; // final pattern databases
+    bool complementary;
 
     /* Returns true iff the two patterns are additive i.e. there is no operator
        which affects variables in pattern one as well as in pattern two. */
@@ -33,8 +37,7 @@ class CanonicalPDBsHeuristic : public Heuristic {
     void dump_cliques() const;
 protected:
     virtual void initialize();
-    virtual int compute_heuristic(const GlobalState &state);
-    virtual string get_heur_name() {string temp = "ipdb"; return temp;}
+    virtual int compute_heuristic(const State &state);
 public:
     CanonicalPDBsHeuristic(const Options &opts);
     virtual ~CanonicalPDBsHeuristic();
@@ -50,16 +53,14 @@ public:
     // checks for all max cliques if they would be additive to this pattern
     void get_max_additive_subsets(const std::vector<int> &new_pattern,
                                   std::vector<std::vector<PDBHeuristic *> > &max_additive_subsets);
-
-    // to avoid unneccessary overhead in the sampling procedure of iPDB, provide
-    // this method to only evaluate the heuristic to check whether a
-    // given state is a dead end or not (see issue404).
-    // set Heuristic's evaluator_value to DEAD_END if state is a dead end and to
-    // 0 otherwise.
-    void evaluate_dead_end(const GlobalState &state);
     const std::vector<PDBHeuristic *> &get_pattern_databases() const {return pattern_databases; }
     int get_size() const {return size; }
     void dump() const;
+    virtual void print_heur_name() {cout<<"heur is IPDB";}
+    virtual string get_heur_name() {string temp="heur is IPDB";return temp;}
+    virtual string get_heur_call_name(){string temp="ipdb(time_limit=120)";return temp;}
+    virtual void get_patterns(string &patterns);
+    virtual bool is_complementary(){return complementary;}
 };
 
 #endif

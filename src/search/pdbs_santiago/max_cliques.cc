@@ -6,6 +6,7 @@
 #include <cassert>
 #include <iostream>
 #include <vector>
+#include "../globals.h"
 
 using namespace std;
 
@@ -16,12 +17,12 @@ class MaxCliqueComputer {
 
     int get_maximizing_vertex(
         const vector<int> &subg, const vector<int> &cand) {
-        assert(is_sorted_unique(subg));
-        assert(is_sorted_unique(cand));
+        assert_sorted_unique(subg);
+        assert_sorted_unique(cand);
 
         //cout << "subg: " << subg << endl;
         //cout << "cand: " << cand << endl;
-        size_t max = 0;
+        int max = 0;
         int vertex = subg[0]; // We will take the first vertex if there is no better one.
 
         for (size_t i = 0; i < subg.size(); ++i) {
@@ -42,6 +43,10 @@ class MaxCliqueComputer {
     void expand(vector<int> &subg, vector<int> &cand) {
         // cout << "subg: " << subg << endl;
         // cout << "cand: " << cand << endl;
+	//cout<<"subg_size:"<<subg.size()<<",cand.size:"<<cand.size()<<",Memory usage before expand:"<<get_memory_VmRSS()<<endl;
+	if(get_memory_VmRSS()>canonical_max_memory){
+	  return;
+	}
         if (subg.empty()) {
             //cout << "clique" << endl;
             max_cliques.push_back(q_clique);
@@ -85,14 +90,22 @@ public:
     }
 
     void compute() {
+      canonical_max_memory+=get_memory_VmRSS();
+      cout<<"canonical_max_memory="<<canonical_max_memory<<endl;
         vector<int> vertices_1;
+	//cout<<"Memory usage before vertices reserve:"<<get_memory_VmRSS()<<endl;
         vertices_1.reserve(graph.size());
         for (size_t i = 0; i < graph.size(); ++i) {
             vertices_1.push_back(i);
         }
         vector<int> vertices_2(vertices_1); // copy vector
+	//cout<<"Memory usage before q_clique reserve:"<<get_memory_VmRSS()<<endl;
         q_clique.reserve(graph.size());
+	//cout<<"Memory usage before expand:"<<get_memory_VmRSS()<<endl;
         expand(vertices_1, vertices_2);
+	if(get_memory_VmRSS()>canonical_max_memory){
+	  cout<<"We finished clique expansion because of high_memory_ussage, current memory usage:"<<get_memory_VmRSS()<<endl;
+	}
     }
 };
 

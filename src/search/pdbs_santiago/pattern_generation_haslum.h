@@ -2,43 +2,37 @@
 #define PDBS_PATTERN_GENERATION_HASLUM_H
 
 #include "../operator_cost.h"
-#include "../state_registry.h"
+#include "../option_parser.h"
 
 #include <map>
-#include <set>
 #include <vector>
+#include <set>
 
-class CanonicalPDBsHeuristic;
-class CountdownTimer;
-class GlobalState;
 class Options;
+class CanonicalPDBsHeuristic;
 class PDBHeuristic;
-class TaskProxy;
-
+class State;
 // Implementation of the pattern generation algorithm by Haslum et al.
 class PatternGenerationHaslum {
-    TaskProxy *task;
     const int pdb_max_size; // maximum number of states for each pdb
     const int collection_max_size; // maximum added size of all pdbs
     const int num_samples;
     const int min_improvement; // minimal improvement required for hill climbing to continue search
-    const double max_time;
     const OperatorCost cost_type;
+    const bool dominance_pruning;
+    const bool complementary; // specifies whether the heuristic is already set to complementary or strong
+    const int time_limit;
     CanonicalPDBsHeuristic *current_heuristic;
 
+    // For each variable v, store a list of goal variables g where some action has an effect on both v and g.
+    std::vector<std::vector<int> > goal_common_action_effects;
+
     int num_rejected; // for stats only
-    CountdownTimer *hill_climbing_timer;
 
     /* For the given pattern, all possible extensions of the pattern by one relevant variable
        are inserted into candidate_patterns. This may generate duplicated patterns. */
-    void generate_candidate_patterns(const PDBHeuristic *pdb,
-                                     std::vector<std::vector<int> > &candidate_patterns);
-
-    /* Generates the PDBHeuristics for patterns in new_candidates if they have
-       not been generated already. */
-    std::size_t generate_pdbs_for_candidates(std::set<std::vector<int> > &generated_patterns,
-                                             std::vector<std::vector<int> > &new_candidates,
-                                             std::vector<PDBHeuristic *> &candidate_pdbs) const;
+    void generate_candidate_patterns(const std::vector<int> &pattern,
+                                     std::set<std::vector<int> > &candidate_patterns);
 
     /* Performs num_samples random walks with a lenght (different for each random walk) chosen
        according to a binomial distribution with n = 4 * solution depth estimate and p = 0.5,
@@ -47,21 +41,12 @@ class PatternGenerationHaslum {
        applicable, the walk starts over again from the initial state. At the end of each random
        walk, the last state visited is taken as a sample state, thus totalling exactly
        num_samples of sample states. */
-    void sample_states(StateRegistry &sample_registry, std::vector<GlobalState> &samples,
-                       double average_operator_costs);
-
-
-    /* Searches for the best improving pdb in candidate_pdbs according to the
-       counting approximation and the given samples. Returns the improvement and
-       the index of the best pdb in candidate_pdbs. */
-    std::pair<int, int> find_best_improving_pdb(std::vector<GlobalState> &samples,
-                                                std::vector<PDBHeuristic *> &candidate_pdbs);
+    void sample_states(std::vector<State> &samples, double average_operator_costs);
 
     /* Returns true iff the h-value of the new pattern (from pdb_heuristic) plus the h-value of all
-       maximal additive subsets from the current pattern collection heuristic if the new pattern was
-       added to it is greater than the the h-value of the current pattern collection. */
-    bool is_heuristic_improved(PDBHeuristic *pdb_heuristic, const GlobalState &sample,
-                               const std::vector<std::vector<PDBHeuristic *> > &max_additive_subsets);
+       additive subsets from the current pattern collection heuristic if the new pattern was added
+       to it is greater than the the h-value of the current pattern collection. */
+    bool is_heuristic_improved(PDBHeuristic *pdb_heuristic, const State &sample);
 
     /* This is the core algorithm of this class. As soon as after an iteration, the improvement (according
        to the "counting approximation") is smaller than the minimal required improvement, the search is
@@ -72,12 +57,14 @@ class PatternGenerationHaslum {
        add_pattern for the current CanonicalPDBsHeuristic, only the pattern is passed as an argument
        and in CanonicalPDBsHeuristic, the PDB is *again* built. One could possibly avoid this by
        passing the PDB and adapt CanonicalPDBsHeuristic accordingly. */
-    void hill_climbing(double average_operator_costs, std::vector<std::vector<int> > &initial_candidate_patterns);
+    void hill_climbing(double average_operator_costs, std::set<std::vector<int> > &initial_candidate_patterns);
 
     /* Initializes everything for the hill climbing algorithm. Note that the initial pattern collection
        (consisting of exactly one PDB for each goal variable) may break the maximum collection size limit,
        if the latter is set too small or if there are many goal variables with a large domain. */
     void initialize();
+
+    void dump_file();
 public:
     PatternGenerationHaslum(const Options &opts);
     virtual ~PatternGenerationHaslum();
@@ -85,6 +72,9 @@ public:
     /* Returns the CanonicalPDBsHeuristic created by PatternGenerationHaslum.
        Important: caller owns the returned pointer and has to take care of its deletion. */
     CanonicalPDBsHeuristic *get_pattern_collection_heuristic() const {return current_heuristic; }
+    static void create_options(OptionParser &parser);
+    static void sanity_check_options(OptionParser &parser, Options &opts);
+
 };
 
 #endif

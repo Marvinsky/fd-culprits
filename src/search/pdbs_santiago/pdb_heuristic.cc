@@ -4,12 +4,14 @@
 #include "util.h"
 
 #include "../globals.h"
-#include "../global_operator.h"
-#include "../global_state.h"
+#include "../operator.h"
 #include "../plugin.h"
 #include "../priority_queue.h"
+#include "../state.h"
 #include "../timer.h"
 #include "../utilities.h"
+
+#include "../merge_and_shrink/variable_order_finder.h"
 
 #include <algorithm>
 #include <cassert>
@@ -17,14 +19,17 @@
 #include <limits>
 #include <string>
 #include <vector>
+#include <boost/lexical_cast.hpp>
+
 
 using namespace std;
 
 AbstractOperator::AbstractOperator(const vector<pair<int, int> > &prev_pairs,
                                    const vector<pair<int, int> > &pre_pairs,
-                                   const vector<pair<int, int> > &eff_pairs, int c,
+                                   const vector<pair<int, int> > &eff_pairs,
+                                   int c, int id,
                                    const vector<size_t> &hash_multipliers)
-    : cost(c), regression_preconditions(prev_pairs) {
+    : cost(c), op_id(id), regression_preconditions(prev_pairs) {
     regression_preconditions.insert(regression_preconditions.end(), eff_pairs.begin(), eff_pairs.end());
     sort(regression_preconditions.begin(), regression_preconditions.end()); // for MatchTree construction
     for (size_t i = 1; i < regression_preconditions.size(); ++i) {
@@ -59,43 +64,98 @@ void AbstractOperator::dump(const vector<int> &pattern) const {
 
 PDBHeuristic::PDBHeuristic(
     const Options &opts, bool dump,
-    const vector<int> &operator_costs)
+    const vector<int> &op_costs)
     : Heuristic(opts) {
-    verify_no_axioms_no_conditional_effects();
-    assert(operator_costs.empty() || operator_costs.size() == g_operators.size());
+    if (opts.contains("store_transition_system") && opts.get<bool>("store_transition_system")) {
+        store_transition_system = true;
+	cout<<"store_transition_system=true"<<endl;
+        abstract_goal_states = new vector<int>();
+        abstract_transitions = new vector<AbstractPDBTransition>();
+    } else {
+        store_transition_system = false;
+        abstract_goal_states = 0;
+        abstract_transitions = 0;
+    }
+    /*  if(abstract_transitions){
+      cout<<"abstract tranisitions is on!"<<endl;
+    }
+    else{
+      cout<<"abstract tranisitions is off"<<endl;
+    }*/
+    verify_no_axioms_no_cond_effects();
+
+    if (op_costs.empty()) { // if no operator costs are specified, use default operator costs
+        operator_costs.reserve(g_operators.size());
+        for (size_t i = 0; i < g_operators.size(); ++i)
+            operator_costs.push_back(get_adjusted_cost(g_operators[i]));
+    } else {
+        assert(op_costs.size() == g_operators.size());
+        operator_costs = op_costs;
+    }
+    relevant_operators.resize(g_operators.size(), false);
 
     Timer timer;
-    set_pattern(opts.get_list<int>("pattern"), operator_costs);
+    set_pattern(opts.get_list<int>("pattern"));
     if (dump)
         cout << "PDB construction time: " << timer << endl;
 }
 
 PDBHeuristic::~PDBHeuristic() {
+    clear_transition_system();
 }
 
-void PDBHeuristic::multiply_out(int pos, int cost, vector<pair<int, int> > &prev_pairs,
+void PDBHeuristic::verify_no_axioms_no_cond_effects() const {
+    if (!g_axioms.empty()) {
+        cerr << "Heuristic does not support axioms!" << endl << "Terminating." << endl;
+        exit(1);
+    }
+    for (int i = 0; i < g_operators.size(); ++i) {
+        const vector<PrePost> &pre_post = g_operators[i].get_pre_post();
+        for (int j = 0; j < pre_post.size(); ++j) {
+            const vector<Prevail> &cond = pre_post[j].cond;
+            if (cond.empty())
+                continue;
+            // Accept conditions that are redundant, but nothing else.
+            // In a better world, these would never be included in the
+            // input in the first place.
+            int var = pre_post[j].var;
+            int pre = pre_post[j].pre;
+            int post = pre_post[j].post;
+            if (pre == -1 && cond.size() == 1 &&
+                cond[0].var == var && cond[0].prev != post &&
+                g_variable_domain[var] == 2)
+                continue;
+
+            cerr << "Heuristic does not support conditional effects "
+                 << "(operator " << g_operators[i].get_name() << ")"
+                 << endl << "Terminating." << endl;
+            exit(1);
+        }
+    }
+}
+
+void PDBHeuristic::multiply_out(int pos, int op_no, int cost, vector<pair<int, int> > &prev_pairs,
                                 vector<pair<int, int> > &pre_pairs,
                                 vector<pair<int, int> > &eff_pairs,
                                 const vector<pair<int, int> > &effects_without_pre,
                                 vector<AbstractOperator> &operators) {
-    if (pos == static_cast<int>(effects_without_pre.size())) {
-        // All effects without precondition have been checked: insert op.
+    if (pos == effects_without_pre.size()) { // all effects withouth precondition have been checked, insert op
         if (!eff_pairs.empty()) {
-            operators.push_back(AbstractOperator(prev_pairs, pre_pairs, eff_pairs, cost, hash_multipliers));
+            operators.push_back(AbstractOperator(prev_pairs, pre_pairs, eff_pairs, cost, op_no, hash_multipliers));
+            relevant_operators[op_no] = true;
         }
     } else {
-        // For each possible value for the current variable, build an
-        // abstract operator.
+        // for each possible value for the current variable, build an abstract operator
         int var = effects_without_pre[pos].first;
         int eff = effects_without_pre[pos].second;
-        for (int i = 0; i < g_variable_domain[pattern[var]]; ++i) {
+        for (size_t i = 0; i < g_variable_domain[pattern[var]]; ++i) {
             if (i != eff) {
                 pre_pairs.push_back(make_pair(var, i));
                 eff_pairs.push_back(make_pair(var, eff));
             } else {
                 prev_pairs.push_back(make_pair(var, i));
             }
-            multiply_out(pos + 1, cost, prev_pairs, pre_pairs, eff_pairs,
+            multiply_out(pos + 1, op_no, cost, prev_pairs, pre_pairs, eff_pairs,
                          effects_without_pre, operators);
             if (i != eff) {
                 pre_pairs.pop_back();
@@ -107,61 +167,38 @@ void PDBHeuristic::multiply_out(int pos, int cost, vector<pair<int, int> > &prev
     }
 }
 
-void PDBHeuristic::build_abstract_operators(const GlobalOperator &op, int cost,
-                                            const std::vector<int> &variable_to_index,
-                                            vector<AbstractOperator> &operators) {
+void PDBHeuristic::build_abstract_operators(
+    int op_no, vector<AbstractOperator> &operators) {
+    const Operator &op = g_operators[op_no];
     vector<pair<int, int> > prev_pairs; // all variable value pairs that are a prevail condition
     vector<pair<int, int> > pre_pairs; // all variable value pairs that are a precondition (value != -1)
     vector<pair<int, int> > eff_pairs; // all variable value pairs that are an effect
     vector<pair<int, int> > effects_without_pre; // all variable value pairs that are a precondition (value = -1)
-
-    const vector<GlobalCondition> &preconditions = op.get_preconditions();
-    const vector<GlobalEffect> &effects = op.get_effects();
-    vector<bool> has_precond_and_effect_on_var(g_variable_domain.size(), false);
-    vector<bool> has_precondition_on_var(g_variable_domain.size(), false);
-
-    for (size_t i = 0; i < preconditions.size(); ++i)
-        has_precondition_on_var[preconditions[i].var] = true;
-
-    for (size_t i = 0; i < effects.size(); ++i) {
-        if (variable_to_index[effects[i].var] != -1) {
-            if (has_precondition_on_var[effects[i].var]) {
-                has_precond_and_effect_on_var[effects[i].var] = true;
-                eff_pairs.push_back(make_pair(variable_to_index[effects[i].var], effects[i].val));
+    const vector<Prevail> &prevail = op.get_prevail();
+    const vector<PrePost> &pre_post = op.get_pre_post();
+    for (size_t i = 0; i < prevail.size(); ++i) {
+        if (variable_to_index[prevail[i].var] != -1) { // variable occurs in pattern
+            prev_pairs.push_back(make_pair(variable_to_index[prevail[i].var], prevail[i].prev));
+        }
+    }
+    for (size_t i = 0; i < pre_post.size(); ++i) {
+        if (variable_to_index[pre_post[i].var] != -1) {
+            if (pre_post[i].pre != -1) {
+                pre_pairs.push_back(make_pair(variable_to_index[pre_post[i].var], pre_post[i].pre));
+                eff_pairs.push_back(make_pair(variable_to_index[pre_post[i].var], pre_post[i].post));
             } else {
-                effects_without_pre.push_back(make_pair(variable_to_index[effects[i].var], effects[i].val));
+                effects_without_pre.push_back(make_pair(variable_to_index[pre_post[i].var], pre_post[i].post));
             }
         }
     }
-    for (size_t i = 0; i < preconditions.size(); ++i) {
-        if (variable_to_index[preconditions[i].var] != -1) { // variable occurs in pattern
-            if (has_precond_and_effect_on_var[preconditions[i].var]) {
-                pre_pairs.push_back(make_pair(variable_to_index[preconditions[i].var], preconditions[i].val));
-            } else {
-                prev_pairs.push_back(make_pair(variable_to_index[preconditions[i].var], preconditions[i].val));
-            }
-        }
-    }
-    multiply_out(0, cost, prev_pairs, pre_pairs, eff_pairs, effects_without_pre, operators);
+    multiply_out(0, op_no, operator_costs[op_no], prev_pairs, pre_pairs, eff_pairs, effects_without_pre, operators);
 }
 
-void PDBHeuristic::create_pdb(const std::vector<int> &operator_costs) {
-    vector<int> variable_to_index(g_variable_name.size(), -1);
-    for (size_t i = 0; i < pattern.size(); ++i) {
-        variable_to_index[pattern[i]] = i;
-    }
-
+void PDBHeuristic::create_pdb() {
     // compute all abstract operators
     vector<AbstractOperator> operators;
     for (size_t i = 0; i < g_operators.size(); ++i) {
-        const GlobalOperator &op = g_operators[i];
-        int op_cost;
-        if (operator_costs.empty()) {
-            op_cost = get_adjusted_cost(op);
-        } else {
-            op_cost = operator_costs[i];
-        }
-        build_abstract_operators(op, op_cost, variable_to_index, operators);
+        build_abstract_operators(i, operators);
     }
 
     // build the match tree
@@ -186,6 +223,10 @@ void PDBHeuristic::create_pdb(const std::vector<int> &operator_costs) {
         if (is_goal_state(state_index, abstract_goal)) {
             pq.push(0, state_index);
             distances.push_back(0);
+            if (store_transition_system) {
+                assert(abstract_goal_states);
+                abstract_goal_states->push_back(state_index);
+            }
         } else {
             distances.push_back(numeric_limits<int>::max());
         }
@@ -205,6 +246,11 @@ void PDBHeuristic::create_pdb(const std::vector<int> &operator_costs) {
         match_tree.get_applicable_operators(state_index, applicable_operators);
         for (size_t i = 0; i < applicable_operators.size(); ++i) {
             size_t predecessor = state_index + applicable_operators[i]->get_hash_effect();
+            if (store_transition_system) {
+                assert(abstract_transitions);
+                int op_id = applicable_operators[i]->get_op_id();
+                abstract_transitions->push_back(AbstractPDBTransition(op_id, predecessor, state_index));
+            }
             int alternative_cost = distances[state_index] + applicable_operators[i]->get_cost();
             if (alternative_cost < distances[predecessor]) {
                 distances[predecessor] = alternative_cost;
@@ -213,18 +259,30 @@ void PDBHeuristic::create_pdb(const std::vector<int> &operator_costs) {
         }
     }
 }
+std::string PDBHeuristic::get_pattern_string() const{
+  string pattern_string;
+    for (size_t i = 0; i < pattern.size(); ++i) {
+      //cout<<"\tpattern[:"<<i<<"]:"<<pattern.at(i)<<endl;
+      pattern_string+=boost::lexical_cast<string>(pattern.at(i));
+      if(i<(pattern.size()-1)){
+	pattern_string+=",";
+      }
+    }
+    return pattern_string;
+}
 
-void PDBHeuristic::set_pattern(const vector<int> &pat,
-                               const vector<int> &operator_costs) {
-    assert(is_sorted_unique(pat));
+void PDBHeuristic::set_pattern(const vector<int> &pat) {
+    assert_sorted_unique(pat);
     pattern = pat;
     hash_multipliers.reserve(pattern.size());
+    variable_to_index.resize(g_variable_name.size(), -1);
     num_states = 1;
     for (size_t i = 0; i < pattern.size(); ++i) {
         hash_multipliers.push_back(num_states);
+        variable_to_index[pattern[i]] = i;
         num_states *= g_variable_domain[pattern[i]];
     }
-    create_pdb(operator_costs);
+    create_pdb();
 }
 
 bool PDBHeuristic::is_goal_state(const size_t state_index, const vector<pair<int, int> > &abstract_goal) const {
@@ -239,7 +297,7 @@ bool PDBHeuristic::is_goal_state(const size_t state_index, const vector<pair<int
     return true;
 }
 
-size_t PDBHeuristic::hash_index(const GlobalState &state) const {
+size_t PDBHeuristic::hash_index(const State &state) const {
     size_t index = 0;
     for (size_t i = 0; i < pattern.size(); ++i) {
         index += hash_multipliers[i] * state[pattern[i]];
@@ -250,52 +308,34 @@ size_t PDBHeuristic::hash_index(const GlobalState &state) const {
 void PDBHeuristic::initialize() {
 }
 
-int PDBHeuristic::compute_heuristic(const GlobalState &state) {
+int PDBHeuristic::compute_heuristic(const State &state) {
     int h = distances[hash_index(state)];
     if (h == numeric_limits<int>::max())
-        return DEAD_END;
+        return -1;
     return h;
 }
 
 double PDBHeuristic::compute_mean_finite_h() const {
     double sum = 0;
-    int size = 0;
+    int size = num_states;
     for (size_t i = 0; i < distances.size(); ++i) {
-        if (distances[i] != numeric_limits<int>::max()) {
-            sum += distances[i];
-            ++size;
+        if (distances[i] == numeric_limits<int>::max()) {
+            --size;
+            continue;
         }
+        sum += distances[i];
     }
-    if (size == 0) { // All states are dead ends.
+    if (size == 0) { // empty pattern or all states are dead-end
         return numeric_limits<double>::infinity();
-    } else {
-        return sum / size;
-    }
+    } else
+        return sum / num_states;
 }
 
-bool PDBHeuristic::is_operator_relevant(const GlobalOperator &op) const {
-    const std::vector<GlobalEffect> &effects = op.get_effects();
-    for (size_t i = 0; i < effects.size(); ++i) {
-        int var = effects[i].var;
-        if (binary_search(pattern.begin(), pattern.end(), var)) {
-            return true;
-        }
-    }
-    return false;
-}
-
-static Heuristic *_parse(OptionParser &parser) {
-    parser.document_synopsis("Pattern database heuristic", "TODO");
-    parser.document_language_support("action costs", "supported");
-    parser.document_language_support("conditional effects", "not supported");
-    parser.document_language_support("axioms", "not supported");
-    parser.document_property("admissible", "yes");
-    parser.document_property("consistent", "yes");
-    parser.document_property("safe", "yes");
-    parser.document_property("preferred operators", "no");
-
+static ScalarEvaluator *_parse(OptionParser &parser) {
     Heuristic::add_options_to_parser(parser);
     Options opts;
+    parser.add_option<bool>("store_transition_system", true,
+                            "Keep the transition system in memory");
     parse_pattern(parser, opts);
 
     if (parser.dry_run())
@@ -304,4 +344,4 @@ static Heuristic *_parse(OptionParser &parser) {
     return new PDBHeuristic(opts);
 }
 
-static Plugin<Heuristic> _plugin("pdb", _parse);
+static Plugin<ScalarEvaluator> _plugin("pdb", _parse);

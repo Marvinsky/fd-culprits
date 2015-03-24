@@ -1,4 +1,5 @@
 #include "dominance_pruner.h"
+#include "../timer.h"
 
 using namespace std;
 
@@ -10,7 +11,7 @@ DominancePruner::DominancePruner(vector<PDBHeuristic *> &pattern_databases_,
 
 void DominancePruner::compute_superset_relation() {
     superset_relation.clear();
-    size_t num_patterns = pattern_databases.size();
+    int num_patterns = pattern_databases.size();
     for (size_t i = 0; i < num_patterns; ++i) {
         const vector<int> p_i = pattern_databases[i]->get_pattern();
         for (size_t j = 0; j < num_patterns; ++j) {
@@ -62,7 +63,8 @@ bool DominancePruner::clique_dominates(const vector<PDBHeuristic *> &c_sup,
 }
 
 
-void DominancePruner::prune() {
+void DominancePruner::prune() {//limited to 30 secs for IPC competition
+  Timer timer;
     vector<vector<PDBHeuristic *> > remaining_cliques;
     // Remember which cliques are already removed and don't use them to prune
     // other cliques. This prevents removing both copies of a clique that occurs
@@ -73,6 +75,10 @@ void DominancePruner::prune() {
     compute_superset_relation();
     // Check all pairs of cliques for dominance.
     for (size_t c1_id = 0; c1_id < max_cliques.size(); ++c1_id) {
+	    if (timer() > 30) {
+	      cout << " Time limit of 30 secs reached. No more dominance pruning." << endl;
+	      break;
+	    } 
         vector<PDBHeuristic *> &c1 = max_cliques[c1_id];
         // Clique c1 is useful if it is not dominated by any clique c2.
         // Assume that it is useful and set it to false if any dominating

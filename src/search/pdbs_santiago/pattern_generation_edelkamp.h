@@ -4,9 +4,11 @@
 #include "../operator_cost.h"
 
 #include <vector>
+#include <iostream>
+#include "../timer.h"
+using namespace std;
 
 class Options;
-class TaskProxy;
 class ZeroOnePDBsHeuristic;
 
 /* Implementation of the pattern generation algorithm by Edelkamp. See:
@@ -15,21 +17,24 @@ class ZeroOnePDBsHeuristic;
    Artificial Intelligence (MoChArt 2006), pp. 35-50, 2007. */
 
 class PatternGenerationEdelkamp {
-    TaskProxy *task;
     const int pdb_max_size; // maximum number of states for each pdb
-    const int num_collections;
+    const int colls;
     const int num_episodes;
     const double mutation_probability;
     const bool disjoint_patterns; // specifies whether patterns in each pattern collection need to be disjoint or not
+    const bool complementary; // specifies whether the heuristic is already set to complementary or strong
     const OperatorCost cost_type;
+    double time_limit;
+   // bool no_more_ga_pdbs;
+    Timer timer;
     std::vector<std::vector<std::vector<bool> > > pattern_collections; // all current pattern collections
-
+    bool best_fitness_was_duplicate;
     // store the fitness value of the best pattern collection over all episodes
     double best_fitness;
     // pointer to the heuristic in evaluate from the episode before, used to free memory.
     ZeroOnePDBsHeuristic *best_heuristic;
 
-    /* The fitness values (from evaluate) are used as probabilities. Then num_collections many
+    /* The fitness values (from evaluate) are used as probabilities. Then colls many
        pattern collections are chosen from the vector of all pattern collections according to their
        probabilities. If all fitness values are 0, we select uniformly randomly.
        Note that the set of pattern collection where we select from is only changed by mutate, NOT
@@ -80,7 +85,10 @@ public:
     /* Returns the ZeroOnePDBsHeuristic created by PatternGenerationEdelkamp.
        Important: caller owns the returned pointer and has to take care of its deletion. */
     ZeroOnePDBsHeuristic *get_pattern_collection_heuristic() const {return best_heuristic; }
+    void dump_best_heuristic() const ;
     void dump() const;
+    void dump_file() const;
+    double get_fitness() const {return best_fitness;};
 };
 
 #endif

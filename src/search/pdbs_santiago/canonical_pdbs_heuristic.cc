@@ -5,11 +5,11 @@
 #include "pdb_heuristic.h"
 #include "util.h"
 
-#include "../global_operator.h"
-#include "../global_state.h"
 #include "../globals.h"
+#include "../operator.h"
 #include "../option_parser.h"
 #include "../plugin.h"
+#include "../state.h"
 #include "../timer.h"
 #include "../utilities.h"
 
@@ -22,14 +22,20 @@ using namespace std;
 CanonicalPDBsHeuristic::CanonicalPDBsHeuristic(const Options &opts)
     : Heuristic(opts) {
     const vector<vector<int> > &pattern_collection(opts.get_list<vector<int> >("patterns"));
+    bool temp3(opts.get<bool>("complementary"));complementary=temp3;
     Timer timer;
     size = 0;
     pattern_databases.reserve(pattern_collection.size());
     for (size_t i = 0; i < pattern_collection.size(); ++i)
         _add_pattern(pattern_collection[i]);
+    cout<<"Memory usage before compute_additive_vars:"<<get_memory_VmRSS()<<endl;
     compute_additive_vars();
+    cout<<"Memory usage after compute_additive_vars:"<<get_memory_VmRSS()<<endl;
     compute_max_cliques();
+    cout<<"Memory usage after compute_max_cliques:"<<get_memory_VmRSS()<<endl;
     cout << "PDB collection construction time: " << timer << endl;
+    cout << "Got " << pattern_databases.size() << " PDBs" << endl;
+    cout << "Found " << max_cliques.size() << " cliques" << endl;
 }
 
 CanonicalPDBsHeuristic::~CanonicalPDBsHeuristic() {
@@ -40,7 +46,6 @@ CanonicalPDBsHeuristic::~CanonicalPDBsHeuristic() {
 
 void CanonicalPDBsHeuristic::_add_pattern(const vector<int> &pattern) {
     Options opts;
-    opts.set<TaskProxy *>("task", task);
     opts.set<int>("cost_type", cost_type);
     opts.set<vector<int> >("pattern", pattern);
     pattern_databases.push_back(new PDBHeuristic(opts, false));
@@ -67,6 +72,7 @@ void CanonicalPDBsHeuristic::compute_max_cliques() {
 
     for (size_t i = 0; i < pattern_databases.size(); ++i) {
         for (size_t j = i + 1; j < pattern_databases.size(); ++j) {
+	  //cout<<"Memory usage after compute_max_cliques for pattern["<<i<<"]"<<"["<<j<<"]:";cout<<get_memory_VmRSS()<<endl;
             if (are_patterns_additive(pattern_databases[i]->get_pattern(),
                                       pattern_databases[j]->get_pattern())) {
                 // if the two patterns are additive there is an edge in the compatibility graph
@@ -78,9 +84,23 @@ void CanonicalPDBsHeuristic::compute_max_cliques() {
 
     vector<vector<int> > cgraph_max_cliques;
     ::compute_max_cliques(cgraph, cgraph_max_cliques);
+    /*  if(get_memory_VmRSS()>canonical_max_memory){
+      cout<<"stopping using canonical, memory usage is too high:"<<get_memory_VmRSS<<",maximum:"<<canonical_max_memory<<endl;
+      stop_using=true;
+      cgraph.clear();
+      max_cliques.clear();
+      for (size_t i = 0; i < pattern_databases.size(); ++i) {
+	  delete pattern_databases[i];
+      }
+      cout<<"Memory usage after clean_up"<<get_memory_VmRSS()<<endl;
+      return;
+    }*/
+    //cout<<"Memory usage after compute_max_cliques:"<<get_memory_VmRSS()<<endl;
     max_cliques.reserve(cgraph_max_cliques.size());
 
+    //cout<<"Memory usage after reserve_max_cliques:"<<get_memory_VmRSS()<<endl;
     for (size_t i = 0; i < cgraph_max_cliques.size(); ++i) {
+      //cout<<"Memory usage after creating clique "<<i<<"]:";cout<<get_memory_VmRSS()<<endl;
         vector<PDBHeuristic *> clique;
         clique.reserve(cgraph_max_cliques[i].size());
         for (size_t j = 0; j < cgraph_max_cliques[i].size(); ++j) {
@@ -94,9 +114,9 @@ void CanonicalPDBsHeuristic::compute_additive_vars() {
     assert(are_additive.empty());
     int num_vars = g_variable_domain.size();
     are_additive.resize(num_vars, vector<bool>(num_vars, true));
-    for (size_t i = 0; i < g_operators.size(); ++i) {
-        const GlobalOperator &o = g_operators[i];
-        const vector<GlobalEffect> effects = o.get_effects();
+    for (size_t k = 0; k < g_operators.size(); ++k) {
+        const Operator &o = g_operators[k];
+        const vector<PrePost> effects = o.get_pre_post();
         for (size_t e1 = 0; e1 < effects.size(); ++e1) {
             for (size_t e2 = 0; e2 < effects.size(); ++e2) {
                 are_additive[effects[e1].var][effects[e2].var] = false;
@@ -129,7 +149,7 @@ void CanonicalPDBsHeuristic::dominance_pruning() {
 void CanonicalPDBsHeuristic::initialize() {
 }
 
-int CanonicalPDBsHeuristic::compute_heuristic(const GlobalState &state) {
+int CanonicalPDBsHeuristic::compute_heuristic(const State &state) {
     int max_h = 0;
     assert(!max_cliques.empty());
     // if we have an empty collection, then max_cliques = { \emptyset }
@@ -137,7 +157,7 @@ int CanonicalPDBsHeuristic::compute_heuristic(const GlobalState &state) {
     for (size_t i = 0; i < pattern_databases.size(); ++i) {
         pattern_databases[i]->evaluate(state);
         if (pattern_databases[i]->is_dead_end())
-            return DEAD_END;
+            return -1;
     }
     for (size_t i = 0; i < max_cliques.size(); ++i) {
         const vector<PDBHeuristic *> &clique = max_cliques[i];
@@ -224,18 +244,6 @@ void CanonicalPDBsHeuristic::get_max_additive_subsets(
     }
 }
 
-void CanonicalPDBsHeuristic::evaluate_dead_end(const GlobalState &state) {
-    int evaluator_value = 0;
-    for (size_t i = 0; i < pattern_databases.size(); ++i) {
-        pattern_databases[i]->evaluate(state);
-        if (pattern_databases[i]->is_dead_end()) {
-            evaluator_value = DEAD_END;
-            break;
-        }
-    }
-    set_evaluator_value(evaluator_value);
-}
-
 void CanonicalPDBsHeuristic::dump_cgraph(const vector<vector<int> > &cgraph) const {
     // print compatibility graph
     cout << "Compatibility graph" << endl;
@@ -265,27 +273,35 @@ void CanonicalPDBsHeuristic::dump_cliques() const {
     cout << ")" << endl;
 }
 
+
+
 void CanonicalPDBsHeuristic::dump() const {
     for (size_t i = 0; i < pattern_databases.size(); ++i) {
-        cout << pattern_databases[i]->get_pattern() << endl;
+        cout<<pattern_databases[i]->get_pattern() << "-";
     }
 }
+void CanonicalPDBsHeuristic::get_patterns(string &patterns){
+  //patterns="[";
+    for (size_t i = 0; i < pattern_databases.size(); ++i) {
+      patterns+="[";
+      patterns+=pattern_databases[i]->get_pattern_string();
+      patterns+="]";
+      //if(i<(pattern_databases.size()-1)){
+	patterns+="-";
+      //}
+    }
+  //patterns+="]";
+}
+/*string CanonicalPDBsHeuristic::get_heur_call_name() {
+  string patterns;
+  get_patterns(patterns);
+  string call="cpdbs(patterns=";call+=patterns;
+  call+=")";
+  return call;
+}*/
 
-static Heuristic *_parse(OptionParser &parser) {
-    parser.document_synopsis(
-        "Canonical PDB",
-        "The canonical pattern database heuristic is calculated as follows. "
-        "For a given pattern collection C, the value of the canonical heuristic "
-        "function is the maximum over all maximal additive subsets A in C, where "
-        "the value for one subset S in A is the sum of the heuristic values for "
-        "all patterns in S for a given state.");
-    parser.document_language_support("action costs", "supported");
-    parser.document_language_support("conditional effects", "not supported");
-    parser.document_language_support("axioms", "not supported");
-    parser.document_property("admissible", "yes");
-    parser.document_property("consistent", "yes");
-    parser.document_property("safe", "yes");
-    parser.document_property("preferred operators", "no");
+static ScalarEvaluator *_parse(OptionParser &parser) {
+    parser.add_option<bool>("complementary", false, "has the heuristic already been determined to be complementary on previous sampling?");
     Heuristic::add_options_to_parser(parser);
     Options opts;
     parse_patterns(parser, opts);
@@ -296,4 +312,4 @@ static Heuristic *_parse(OptionParser &parser) {
     return new CanonicalPDBsHeuristic(opts);
 }
 
-static Plugin<Heuristic> _plugin("cpdbs", _parse);
+static Plugin<ScalarEvaluator> _plugin("cpdbs", _parse);
