@@ -153,6 +153,7 @@ void PatternGenerationEdelkamp::dump_best_heuristic() const {
 
 void PatternGenerationEdelkamp::dump_file() const {
 	ofstream outputFile;
+        cout<<"callind dump_file() with ";
 	static int i = 0;
 	if (best_fitness<0){
 		//No GAPDB was chosen
@@ -160,8 +161,8 @@ void PatternGenerationEdelkamp::dump_file() const {
 	}
 
 	if (pdb_dump_counter == 0) {
-		string system_call = "/bin/rm";
-		system_call += g_plan_filename;
+		string system_call = "/bin/rm ";
+		system_call += problem_name2;
 		system_call += ".dat";
 		cout<<"First call, removing system_call to avoid duplicate pdbs:"<<system_call<<endl;
 
@@ -173,8 +174,9 @@ void PatternGenerationEdelkamp::dump_file() const {
 	}
 	pdb_dump_counter++;
 
-	string file_name = g_plan_filename;
+	string file_name = problem_name2;
 	file_name += ".dat";
+        cout<<"file_name: "<<file_name<<endl;
 
 	outputFile.open(file_name.c_str(), ios::app);
 	problem_name = g_plan_filename;

@@ -1,0 +1,40 @@
+reading input... [t=0.00s]
+Simplifying transitions... done!
+done reading input! [t=0.00s]
+building causal graph...done! [t=0.00s]
+packing state variables...done! [t=0.00s]
+Variables: 9
+Facts: 30
+Bytes per state: 4
+done initalizing global data [t=0.00s]
+SSSearch ...
+Initializing HSP max heuristic...
+Simplifying 120 unary operators... done! [96 unary operators]
+Initial heuristic value: 2
+h_min: 2 depth: 0 #states: 0 time: 0.00s
+
+totalPrediction : 0.00
+dominio = temp
+tarefa = temp
+heuristica = temp
+length = 4
+found = 4294967295
+name = temp.csv
+Directory: temp created.
+Directory: SSCC created.
+count nodes generates : -nan
+count nodes expanded : -nan
+dominio = temp
+tarefa = temp
+heuristica = temp
+Directory: temp created.
+Directory: fdist created.
+print.
+g:0
+size: 0
+
+Actual search time: 0.00s [t=0.00s]
+Search time: 0.00s
+Total time: 0.00s
+Search stopped without finding a solution.
+Peak memory: 3092 KB
