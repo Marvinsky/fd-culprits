@@ -6,6 +6,8 @@
 #include <vector>
 #include <set>
 
+using namespace std;
+
 class Axiom;
 class AxiomEvaluator;
 class CausalGraph;
@@ -92,9 +94,9 @@ struct compare_patterns
     if(v1.size()<v2.size()){
         return true;
     }   
-    int matching_patterns=0;
-    for(int i=0;i<v1.size();i++){
-      for(int j=0;j<v2.size();j++){
+    size_t matching_patterns=0;
+    for(size_t i=0;i<v1.size();i++){
+      for(size_t j=0;j<v2.size();j++){
         if(v1[i] == v2[j]){
           matching_patterns++;
           break;
@@ -106,7 +108,13 @@ struct compare_patterns
       return false;
     }   
     return true;
-}
-
+  }	
+};
 extern std::set<std::vector<std::vector<int> >, compare_patterns> chosen_pattern_collections;//all current pattern collections
+extern bool no_more_ga_pdbs;
+extern bool use_saved_pdbs;
+extern double pdb_gen_time_limit;
+extern int g_random_seed;
+extern int pdb_dump_counter;
+extern string problem_name;
 #endif

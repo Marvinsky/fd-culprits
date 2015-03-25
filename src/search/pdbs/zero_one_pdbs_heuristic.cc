@@ -73,6 +73,16 @@ int ZeroOnePDBsHeuristic::compute_heuristic(const GlobalState &state) {
     return h_val;
 }
 
+void ZeroOnePDBsHeuristic::get_patterns(string &patterns) {
+	//patterns="[";
+	for (size_t i = 0; i < pattern_databases.size(); i++) {
+		patterns+="[";
+		patterns+=pattern_databases[i]->get_pattern_string();
+		patterns+="]";
+		patterns+="-";
+	}
+} 
+
 void ZeroOnePDBsHeuristic::dump() const {
     for (size_t i = 0; i < pattern_databases.size(); ++i) {
         cout << pattern_databases[i]->get_pattern() << endl;

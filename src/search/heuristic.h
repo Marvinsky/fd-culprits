@@ -22,15 +22,14 @@ class Heuristic : public ScalarEvaluator {
     int evaluator_value; // usually equal to heuristic but can be different
     // if set with set_evaluator_value which is done if we use precalculated
     // estimates, eg. when re-opening a search node
-
+    bool stop_using;
     std::vector<const GlobalOperator *> preferred_operators;
 protected:
     TaskProxy *task;
     OperatorCost cost_type;
     enum {DEAD_END = -1};
     virtual void initialize() {}
-    // TODO: Call with State directly once all heuristics support it.
-    virtual int compute_heuristic(const GlobalState &state) = 0;
+   
     // Usage note: It's OK to set the same operator as preferred
     // multiple times -- it will still only appear in the list of
     // preferred operators for this heuristic once.
@@ -46,6 +45,10 @@ public:
     Heuristic(const Options &options);
     virtual ~Heuristic();
 
+    // TODO: Call with State directly once all heuristics support it.
+    virtual int compute_heuristic(const GlobalState &state) = 0;
+
+    void set_stop_using(bool status);
     void evaluate(const GlobalState &state);
     bool is_dead_end() const;
     int get_heuristic();
@@ -54,6 +57,8 @@ public:
     virtual bool dead_ends_are_reliable() const {return true; }
     virtual bool reach_state(const GlobalState &parent_state, const GlobalOperator &op,
                              const GlobalState &state);
+
+    virtual void get_patterns(string &patterns) {patterns="";};
 
     // virtual methods inherited from Evaluator and ScalarEvaluator:
     virtual int get_value() const;

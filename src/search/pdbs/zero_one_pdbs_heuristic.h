@@ -13,11 +13,13 @@ class ZeroOnePDBsHeuristic : public Heuristic {
     std::vector<PDBHeuristic *> pattern_databases; // final pattern databases
 protected:
     virtual void initialize();
-    virtual int compute_heuristic(const GlobalState &state);
+    
 public:
     ZeroOnePDBsHeuristic(const Options &opts,
                          const std::vector<int> &op_costs = std::vector<int>());
     virtual ~ZeroOnePDBsHeuristic();
+    virtual int compute_heuristic(const GlobalState &state);
+    virtual void get_patterns(string &patterns);
     /* Returns the sum of all mean finite h-values of every PDB.
        This is an approximation of the real mean finite h-value of the Heuristic, because dead-ends are ignored for
        the computation of the mean finite h-values for a PDB. As a consequence, if different PDBs have different states

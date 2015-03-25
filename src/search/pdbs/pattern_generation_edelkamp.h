@@ -2,7 +2,7 @@
 #define PDBS_PATTERN_GENERATION_EDELKAMP_H
 
 #include "../operator_cost.h"
-
+#include "../timer.h" 
 #include <vector>
 
 class Options;
@@ -84,7 +84,10 @@ public:
     /* Returns the ZeroOnePDBsHeuristic created by PatternGenerationEdelkamp.
        Important: caller owns the returned pointer and has to take care of its deletion. */
     ZeroOnePDBsHeuristic *get_pattern_collection_heuristic() const {return best_heuristic; }
+    void dump_best_heuristic() const ;
     void dump() const;
+    void dump_file() const;
+    double get_fitness() const {return best_fitness;};
 };
 
 #endif
