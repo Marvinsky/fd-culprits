@@ -125,4 +125,10 @@ template<typename T>
 void unused_parameter(const T &) {
 }
 
+//ss+cc
+bool get_GA_patterns_from_file (std::vector<std::vector<int> > &all_pattern_col,
+                bool disjoint,
+                double mutation_rate,
+                int pdb_max_size);
+
 #endif
