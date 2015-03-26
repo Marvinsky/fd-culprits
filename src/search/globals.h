@@ -117,4 +117,5 @@ extern double pdb_gen_time_limit;
 extern int g_random_seed;
 extern int pdb_dump_counter;
 extern string problem_name;
+extern vector<string> stored_GA_patterns;
 #endif

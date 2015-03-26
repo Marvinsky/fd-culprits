@@ -5,6 +5,10 @@
 #include <iostream>
 #include <fstream>
 #include <limits>
+#include "ext/boost/lexical_cast.hpp"
+#include <iomanip>
+#include "../timer.h"
+
 using namespace std;
 
 
@@ -181,7 +185,7 @@ bool get_GA_patterns_from_file(std::vector<std::vector<int> > &all_pattern_col,b
     //cout<<"log_file:"<<log_file<<",g_plan_filename:"<<g_plan_filename;
     string problem_name_mod=g_plan_filename;
     problem_name_mod+=":";
-    //cout<<",problem_name_mod:"<<problem_name_mod<<endl;
+    cout<<",problem_name_mod:"<<problem_name_mod<<endl;
     std::string disjoint_pattern("disjoint_patterns:,");
     if(disjoint){
       disjoint_pattern+="1";
@@ -190,7 +194,7 @@ bool get_GA_patterns_from_file(std::vector<std::vector<int> > &all_pattern_col,b
       disjoint_pattern+="0";
     }
     
-    //cout<<disjoint_pattern<<endl;
+    cout<<disjoint_pattern<<endl;
     std::string mutation_rate_string("mp:,");
     //mutation_rate_string+=boost::lexical_cast<std::string>(mutation_rate);
     //mutation_rate_string+=std::to_string(mutation_rate);
@@ -200,17 +204,17 @@ bool get_GA_patterns_from_file(std::vector<std::vector<int> > &all_pattern_col,b
     //std::string str = strs.str();
     mutation_rate_string+=strs.str();
     mutation_rate_string+=",";
-    //cout<<"mutation_rate_string:"<<mutation_rate_string<<endl;
+    cout<<"mutation_rate_string:"<<mutation_rate_string<<endl;
     
     std::string pdb_max_size_string("size:,");
     std::ostringstream strs2;strs2 << std::fixed;strs2<<pdb_max_size;
     pdb_max_size_string+=strs2.str();
     pdb_max_size_string+=",";
-    //cout<<"pdb_max_size_string:"<<pdb_max_size_string<<endl;
+    cout<<"pdb_max_size_string:"<<pdb_max_size_string<<endl;
 
-          for(int pattern=0;pattern<stored_GA_patterns.size();pattern++){
+          for(size_t pattern=0;pattern<stored_GA_patterns.size();pattern++){
      line=stored_GA_patterns.at(pattern);
-     //cout<<"line:"<<line<<endl;
+     cout<<"line:"<<line<<endl;
      if( line.find(problem_name_mod)!=string::npos&&line.find(disjoint_pattern)!=string::npos
   &&line.find(mutation_rate_string)!=string::npos&&line.find(pdb_max_size_string)!=string::npos){
        found_PDB=true;
@@ -268,8 +272,8 @@ bool get_GA_patterns_from_file(std::vector<std::vector<int> > &all_pattern_col,b
        current_pos=line.find("time:");
        current_pos=line.find_first_of("0123456789",current_pos);
        temp=line.substr(current_pos);
-       double temp2=boost::lexical_cast<double>(temp);
-       overall_original_pdbs_time+=temp2;
+       //double temp2=boost::lexical_cast<double>(temp);
+       //overall_original_pdbs_time+=temp2;
      }
    }
     if(!found_PDB){
@@ -283,18 +287,20 @@ bool get_GA_patterns_from_file(std::vector<std::vector<int> > &all_pattern_col,b
 }
 
 void load_GA_Patterns_from_file(){
-  ifstream in(log_file.c_str());
   std::string line;
-  string problem_name_mod=g_plan_filename;
+  string problem_name_mod=problem_name2;
+  problem_name_mod += ".dat";
+  ifstream in(problem_name_mod.c_str());
   Timer load_GA_from_file_timer;
   
   cout<<"Calling load_GA_Patterns_from_file"<<endl;
-  cout<<"log_file:"<<log_file<<",g_plan_filename:"<<g_plan_filename<<endl;
+  cout<<"log_file:"<<problem_name_mod<<",g_plan_filename:"<<g_plan_filename<<endl;
     if( in.is_open())
     {
+      cout<<"is_open true"<<endl;
       while( getline(in,line) ){
-	  //cout<<"line:"<<line<<endl;
-	if( line.find(problem_name_mod)!=string::npos){
+	  cout<<"line:"<<line<<endl;
+	if( line.find(g_plan_filename)!=string::npos){
 	    stored_GA_patterns.push_back(line);
 	}
       }

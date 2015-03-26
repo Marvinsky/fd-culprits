@@ -595,6 +595,14 @@ void SSSearch::initialize() {
 	depth = 0;
 	report_progress();
 	depth ++;
+        
+        //ss+cc santiago code
+	if (use_saved_pdbs) {
+		stored_GA_patterns.clear();
+		cout<<"cleared store_GA_patterns."<<endl;
+	}
+
+
 }
 
 static SearchEngine *_parse(OptionParser &parser) {

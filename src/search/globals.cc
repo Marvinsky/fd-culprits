@@ -412,3 +412,4 @@ double pdb_gen_time_limit = 100;
 int g_random_seed = 1;
 int pdb_dump_counter = 0;
 string problem_name = "temp";
+vector<string> stored_GA_patterns;

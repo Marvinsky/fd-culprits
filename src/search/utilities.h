@@ -6,6 +6,7 @@
 #include <utility>
 #include <vector>
 #include <tr1/functional>
+#include "globals.h"
 
 #define LINUX 0
 #define OSX 1

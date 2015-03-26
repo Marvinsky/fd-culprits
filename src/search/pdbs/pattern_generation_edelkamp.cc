@@ -73,7 +73,7 @@ PatternGenerationEdelkamp::PatternGenerationEdelkamp(const Options &opts)
       ///cout<<"GAPDB,mutation_probability:"<<mutation_probability<<".Disj:"<<disjoint_patterns<<",restarted random sequence for g_random_seed"<<g_random_seed<<",complementary:"<<endl;
       timer.reset();
       //As we are running several methods for comparison, we ran PDB generation only once per problem and then add the generation time(minus the new generation time of just the selected pdbs) and the selected patterns
-      //if(use_saved_pdbs){
+      if(use_saved_pdbs){
 	//problem_name=g_plan_filename;
       /*for (int i = 0; i < argc_copy; ++i) {
 	//puts(argv_copy[i]);
@@ -97,7 +97,7 @@ PatternGenerationEdelkamp::PatternGenerationEdelkamp(const Options &opts)
 //	pattern_collection.push_back(v7);
 //	pattern_collection.push_back(v8);
 
-	/*if(!get_GA_patterns_from_file(pattern_collection,disjoint_patterns,mutation_probability,pdb_max_size)){
+	if(!get_GA_patterns_from_file(pattern_collection,disjoint_patterns,mutation_probability,pdb_max_size)){
 	  //cout<<"Cant find at least one previous GA, so returning dummy heuristic from now on"<<endl;
 	  no_more_ga_pdbs=true;
 	  return;
@@ -105,6 +105,9 @@ PatternGenerationEdelkamp::PatternGenerationEdelkamp(const Options &opts)
 	//cout<<"returned from get_GA_patterns_from_file"<<endl;fflush(NULL);
 	      
 	Options opts2;
+
+	opts2.set<TaskProxy *>("task", task);
+
 	opts2.set<int>("cost_type", cost_type);
 	opts2.set<bool>("disjoint", disjoint_patterns);
 	opts2.set<vector<vector<int> > >("patterns", pattern_collection);
@@ -117,11 +120,10 @@ PatternGenerationEdelkamp::PatternGenerationEdelkamp(const Options &opts)
 	best_heuristic = zoppch;
 	best_fitness = best_heuristic->get_approx_mean_finite_h();
 	//dump_best_heuristic();
-      }
-      else{*/
-	genetic_algorithm();
-	cout << "Pattern generation (Edelkamp) time: " << timer() << endl;
-     // }
+        } else {
+          genetic_algorithm();
+	  cout << "Pattern generation (Edelkamp) time: " << timer() << endl;
+        }
     //Timer timer;
     //genetic_algorithm();
     //cout << "Pattern generation (Edelkamp) time: " << timer << endl;
@@ -186,13 +188,14 @@ void PatternGenerationEdelkamp::dump_file() const {
 	string patterns;
 	best_heuristic->get_patterns(patterns);
 	outputFile<<patterns;
-	
+
+
 	std::ostringstream ss;
 	ss<<std::fixed<<std::setprecision(7);
 	ss<<mutation_probability;
 	outputFile<<",mp:,"<<ss.str();
 	outputFile<<",size:,"<<pdb_max_size;
-	outputFile<<",disjoiint_patterns:,"<<disjoint_patterns;
+	outputFile<<",disjoint_patterns:,"<<disjoint_patterns;
 	outputFile<<"-best_fitness:"<<best_fitness<<",";
 	outputFile<<",initial value:"<<best_heuristic->compute_heuristic(g_initial_state());
 	outputFile<<",GAPDB generation time:"<<timer()<<endl;
