@@ -281,3 +281,24 @@ bool get_GA_patterns_from_file(std::vector<std::vector<int> > &all_pattern_col,b
     }*/
     return found_PDB;
 }
+
+void load_GA_Patterns_from_file(){
+  ifstream in(log_file.c_str());
+  std::string line;
+  string problem_name_mod=g_plan_filename;
+  Timer load_GA_from_file_timer;
+  
+  cout<<"Calling load_GA_Patterns_from_file"<<endl;
+  cout<<"log_file:"<<log_file<<",g_plan_filename:"<<g_plan_filename<<endl;
+    if( in.is_open())
+    {
+      while( getline(in,line) ){
+	  //cout<<"line:"<<line<<endl;
+	if( line.find(problem_name_mod)!=string::npos){
+	    stored_GA_patterns.push_back(line);
+	}
+      }
+    }
+    in.close();
+    cout<<"stored_GA_patterns.size:"<<stored_GA_patterns.size()<<",time:"<<load_GA_from_file_timer()<<endl;
+}
