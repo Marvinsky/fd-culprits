@@ -171,7 +171,7 @@ bool is_product_within_limit(int factor1, int factor2, int limit) {
 
 bool get_GA_patterns_from_file(std::vector<std::vector<int> > &all_pattern_col,bool disjoint,double mutation_rate,int pdb_max_size){
   if(stored_GA_patterns.size()==0){
-    //cout<<"No patterns stored,calling load_GA_Patterns_from_file"<<endl;
+    cout<<"No patterns stored,calling load_GA_Patterns_from_file"<<endl;
     load_GA_Patterns_from_file();
   }
   all_pattern_col.clear();//just in case this was previously populated
@@ -288,7 +288,12 @@ bool get_GA_patterns_from_file(std::vector<std::vector<int> > &all_pattern_col,b
 
 void load_GA_Patterns_from_file(){
   std::string line;
-  string problem_name_mod=problem_name2;
+
+  string task2 = problem_name2;
+  
+  size_t found = task2.find(".");
+
+  string problem_name_mod = task2.substr(0, found);
   problem_name_mod += ".dat";
   ifstream in(problem_name_mod.c_str());
   Timer load_GA_from_file_timer;

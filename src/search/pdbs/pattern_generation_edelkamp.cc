@@ -73,6 +73,7 @@ PatternGenerationEdelkamp::PatternGenerationEdelkamp(const Options &opts)
       ///cout<<"GAPDB,mutation_probability:"<<mutation_probability<<".Disj:"<<disjoint_patterns<<",restarted random sequence for g_random_seed"<<g_random_seed<<",complementary:"<<endl;
       timer.reset();
       //As we are running several methods for comparison, we ran PDB generation only once per problem and then add the generation time(minus the new generation time of just the selected pdbs) and the selected patterns
+      cout<<"use_saved_pdbs = "<<use_saved_pdbs<<endl;
       if(use_saved_pdbs){
 	//problem_name=g_plan_filename;
       /*for (int i = 0; i < argc_copy; ++i) {
@@ -164,7 +165,10 @@ void PatternGenerationEdelkamp::dump_file() const {
 
 	if (pdb_dump_counter == 0) {
 		string system_call = "/bin/rm ";
-		system_call += problem_name2;
+                string task2 = problem_name2;
+                size_t found2 = task2.find(".");
+                string task2_final = task2.substr(0, found2);
+		system_call += task2_final; 
 		system_call += ".dat";
 		cout<<"First call, removing system_call to avoid duplicate pdbs:"<<system_call<<endl;
 
@@ -176,7 +180,12 @@ void PatternGenerationEdelkamp::dump_file() const {
 	}
 	pdb_dump_counter++;
 
-	string file_name = problem_name2;
+        string task3 = problem_name2;
+	
+	size_t found3 = task3.find(".");
+	
+	string file_name =  task3.substr(0, found3);
+        
 	file_name += ".dat";
         cout<<"file_name: "<<file_name<<endl;
 
