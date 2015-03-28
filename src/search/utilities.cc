@@ -212,7 +212,7 @@ bool get_GA_patterns_from_file(std::vector<std::vector<int> > &all_pattern_col,b
     pdb_max_size_string+=",";
     cout<<"pdb_max_size_string:"<<pdb_max_size_string<<endl;
 
-          for(size_t pattern=0;pattern<stored_GA_patterns.size();pattern++){
+    for(size_t pattern=0;pattern<stored_GA_patterns.size();pattern++){
      line=stored_GA_patterns.at(pattern);
      cout<<"line:"<<line<<endl;
      if( line.find(problem_name_mod)!=string::npos&&line.find(disjoint_pattern)!=string::npos
@@ -295,6 +295,9 @@ void load_GA_Patterns_from_file(){
 
   string problem_name_mod = task2.substr(0, found);
   problem_name_mod += ".dat";
+  problem_name_mod = "dat/" + problem_name_mod;
+  cout<<"problem_name_mod = "<<problem_name_mod<<endl;
+
   ifstream in(problem_name_mod.c_str());
   Timer load_GA_from_file_timer;
   
@@ -305,7 +308,8 @@ void load_GA_Patterns_from_file(){
       cout<<"is_open true"<<endl;
       while( getline(in,line) ){
 	  cout<<"line:"<<line<<endl;
-	if( line.find(g_plan_filename)!=string::npos){
+	if( line.find(g_plan_filename)!=string::npos) {
+	    cout<<"inside the line: 312"<<endl<<endl;
 	    stored_GA_patterns.push_back(line);
 	}
       }

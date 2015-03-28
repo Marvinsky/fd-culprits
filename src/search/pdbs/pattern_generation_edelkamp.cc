@@ -162,9 +162,17 @@ void PatternGenerationEdelkamp::dump_file() const {
 		//No GAPDB was chosen
 		return;
 	}
-
+        cout<<"pdb_dump_counter = "<<pdb_dump_counter<<endl;
 	if (pdb_dump_counter == 0) {
-		string system_call = "/bin/rm ";
+                //Create directory dat
+                string datDirectory = "mkdir dat";
+		if (system(datDirectory.c_str())) {
+		   cout<<"dat directory created."<<endl;
+		} else {
+		   cout<<"dat directory was created"<<endl;
+                }
+
+		string system_call = "/bin/dat/rm ";
                 string task2 = problem_name2;
                 size_t found2 = task2.find(".");
                 string task2_final = task2.substr(0, found2);
@@ -187,6 +195,7 @@ void PatternGenerationEdelkamp::dump_file() const {
 	string file_name =  task3.substr(0, found3);
         
 	file_name += ".dat";
+        file_name = "dat/" + file_name; 
         cout<<"file_name: "<<file_name<<endl;
 
 	outputFile.open(file_name.c_str(), ios::app);
