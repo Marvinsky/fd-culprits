@@ -486,7 +486,7 @@ void SSSearch::generateSSCCReport() {
 	string dominio = domain_name;
         string tarefa = problem_name2;
         string heuristica = heuristic_name2;
-
+        cout<<"MarvinAbisrroZarate"<<endl;
 	cout<<"dominio = "<<dominio<<endl;
         cout<<"tarefa = "<<tarefa<<endl;
         cout<<"heuristica = "<<heuristica<<endl;
