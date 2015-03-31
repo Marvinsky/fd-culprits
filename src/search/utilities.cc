@@ -295,6 +295,8 @@ void load_GA_Patterns_from_file(){
 
   string problem_name_mod = task2.substr(0, found);
   problem_name_mod += ".dat";
+  problem_name_mod = "/" + problem_name_mod;
+  problem_name_mod = domain_name + problem_name_mod;
   problem_name_mod = "dat/" + problem_name_mod;
   cout<<"problem_name_mod = "<<problem_name_mod<<endl;
 
