@@ -119,7 +119,8 @@ SearchStatus DFSSearch::step() {
         StateID initial_state_id = initial_state.get_id();
         SSNode node(initial_state_id, h_initial, 0);
     
-        depth = 12;
+        depth = 2*h_initial;
+        cout<<"depth = "<<depth<<endl;
         queue.push(node);
         double count_nodes = 1.0;
 
@@ -132,7 +133,12 @@ SearchStatus DFSSearch::step() {
               StateID state_id = nodecp.get_id();
 
               Node2 node2(nodecp.get_h_value() + g, g);
- 
+
+              int new_f_value = nodecp.get_h_value() + g;
+              if (search_progress.updated_lastjump_f_value(new_f_value)) {
+                 search_progress.report_f_value(new_f_value);
+              }
+
 	      /*if (collector.insert(pair<Node2, double>(node2, count_nodes)).second) {
                  count_nodes = 1;
               } else {

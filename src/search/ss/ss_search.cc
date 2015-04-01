@@ -104,21 +104,21 @@ void SSSearch::probe()
 	for (size_t i = 0; i < h_initial_v.size(); i++) {
             int h_value = h_initial_v.at(i);
             //cout<<h_value;
-            if (i != h_initial_v.size() - 1) {
+            //if (i != h_initial_v.size() - 1) {
                //cout<<"/";
-            }
+            //}
             if (h_value <= threshold) {
                b_initial_v.set(i);
             }
         }
         
         //cout<<"\nprint b_initial_v\n";
-        for (size_t i = 0; i< b_initial_v.size(); i++) {
+        //for (size_t i = 0; i< b_initial_v.size(); i++) {
             //cout<<b_initial_v.test(i);
-            if (i != b_initial_v.size() -1) {
+            //if (i != b_initial_v.size() -1) {
                //cout<<"/";
-            }
-        }
+            //}
+        //}
         std::vector<const GlobalOperator*> applicable_ops0;
         GlobalState global_state0 = g_state_registry->lookup_state(g_initial_state().get_id()); 
         g_successor_generator->generate_applicable_ops(global_state0, applicable_ops0);
@@ -246,20 +246,20 @@ void SSSearch::probe()
                   	//working with h-value
                   	//cout<<"\nprint h_child_v\n";
                   	//cout<<"g = "<<g + 1<<endl;
-                  	for (size_t i = 0; i < heur_name_v.size(); i++) {
+                  	//for (size_t i = 0; i < heur_name_v.size(); i++) {
                       		//cout<<heur_name_v.at(i);
-                      		if (i != heur_name_v.size() - 1) {
+                      		//if (i != heur_name_v.size() - 1) {
                          		//cout<<"/";
-                      		}
-                  	}
+                      		//}
+                  	//}
                   	heur_name_v.clear();
                   	//cout<<"\n"; 
                   	for (size_t i = 0; i < h_child_v.size(); i++) {
                       		int h_value = h_child_v.at(i);
                       		//cout<<h_value;
-                      		if (i != h_child_v.size() -1) {
+                      		//if (i != h_child_v.size() -1) {
                          		//cout<<"/";
-                      		}
+                      		//}
                       		if (h_value + g + get_adjusted_cost(*op)  <= threshold) {
                           		//b_child_v.insert(b_child_v.begin() + i, true);
                           		b_child_v.set(i);
@@ -294,21 +294,21 @@ void SSSearch::probe()
 
      
                   	//cout<<"\nprint b_child_v\n";
-                  	for (size_t i = 0; i< b_child_v.size(); i++) {
+                  	//for (size_t i = 0; i< b_child_v.size(); i++) {
                        		//cout<<b_child_v.test(i);
-                       		if (i != b_child_v.size() -1) {
+                       		//if (i != b_child_v.size() -1) {
                           		//cout<<"/";                         
-                       		}
-                  	}
+                       		//}
+                  	//}
                  
                   	// working with f-value
                   	//cout<<"\nprint f_child_v\n";                   
                   	for (size_t i = 0; i < f_child_v.size(); i++) {
                       		int f_value = f_child_v.at(i);
                       		//cout<<f_value;
-                      		if (i != f_child_v.size() -1) {
+                      		//if (i != f_child_v.size() -1) {
                          		//cout<<"/";
-                      		}
+                      		//}
                       		if (f_value <= threshold) {
                           		//b_f_child_v.insert(b_f_child_v.begin() + i, true);
                           		b_f_child_v.set(i);
@@ -316,12 +316,12 @@ void SSSearch::probe()
                   	}
                    
                   	//cout<<"\nprint f_b_child_v\n";
-                  	for (size_t i = 0; i < b_f_child_v.size(); i++) {
+                  	//for (size_t i = 0; i < b_f_child_v.size(); i++) {
 				//cout<<b_f_child_v.test(i);
-                        	if (i != b_f_child_v.size() -1) {
+                        	//if (i != b_f_child_v.size() -1) {
                            		//cout<<"/";
-                        	}
-                  	}
+                        	//}
+                  	//}
 
 
                         if (b_child_v.count() > 0) {
