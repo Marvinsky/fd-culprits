@@ -137,11 +137,15 @@ SearchStatus DFSSearch::step() {
 
               Node2 node2(nodecp.get_h_value() + g, g);
               int new_f_value = nodecp.get_h_value() + g;
-	      if (search_progress.updated_lastjump_f_value(new_f_value)) {
-                 search_progress.report_f_value(new_f_value);
+	      if (search_progress.updated_lastjump_f_value_sscc(new_f_value)) {
+                
+                 bool flag = search_progress.showReportLastjump(new_f_value);
+		 if (flag)  {
+			cout<<"f_boundary = "<<new_f_value;
+                 	generateGeneratedReport(false);
+		 }
               }
-
-
+               
 	      //count nodes expanded
               std::pair<std::map<Node2, double>::iterator, bool> ret0;
               std::map<Node2, double>::iterator it0;
@@ -224,14 +228,7 @@ SearchStatus DFSSearch::step() {
         }
         cout<<"Total of nodes expanded: "<<nodes_total_expanded<<endl;
  
-        double nodes_total_generated = 0;
-        for (map<Node2, double>::iterator iter = generated.begin(); iter != generated.end(); iter++) {
-            
-  	    double q = iter->second;
-            nodes_total_generated += q;  
-        }
-        cout<<"Total of nodes generated: "<<nodes_total_generated<<endl;
-        cout<<"generated.size() = "<<generated.size()<<endl;
+        generateGeneratedReport(true); 
         generated.clear();
 
         ofstream output;
@@ -289,6 +286,24 @@ SearchStatus DFSSearch::step() {
         expanded.clear(); 
    	return SOLVED;
 }
+
+
+void DFSSearch::generateGeneratedReport(bool flag) {
+	double nodes_total_generated = 0;
+        for (map<Node2, double>::iterator iter = generated.begin(); iter != generated.end(); iter++) {
+
+            double q = iter->second;
+            nodes_total_generated += q;
+        }
+
+        if (flag) {
+		cout<<", Total of nodes generated: "<<nodes_total_generated<<endl;
+	} else {
+		cout<<", Parcial of nodes generated: "<<nodes_total_generated<<endl;
+	}
+        
+}
+
 
 pair<SearchNode, bool> DFSSearch::fetch_next_node() {
     /* TODO: The bulk of this code deals with multi-path dependence,

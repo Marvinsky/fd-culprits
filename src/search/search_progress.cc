@@ -20,6 +20,7 @@ SearchProgress::SearchProgress() {
     lastjump_generated_states = 0;
 
     lastjump_f_value = -1;
+    lastjump_f_value_sscc = -1;
 }
 
 SearchProgress::~SearchProgress() {
@@ -42,13 +43,27 @@ void SearchProgress::report_f_value(int f) {
     }
 }
 
-bool SearchProgress::updated_lastjump_f_value(int f) {
-        if (f > lastjump_f_value) {
+bool SearchProgress::showReportLastjump(int f) {
+        bool flag = false;
+	if (f > lastjump_f_value_sscc) {
+	     lastjump_f_value_sscc = f;
+             flag = true;
+	}
+	return flag;
+}
+
+bool SearchProgress::updated_lastjump_f_value_sscc(int f) {
+        if (f > lastjump_f_value_sscc) {
                 return true;
         } else {
                 return false;
         }
 }
+
+int SearchProgress::return_lastjump_f_value() {
+	return lastjump_f_value;
+}
+
 
 void SearchProgress::get_initial_h_values() {
     for (size_t i = 0; i < heuristics.size(); ++i) {

@@ -25,6 +25,7 @@ private:
 
     // f-statistics
     int lastjump_f_value; //f value obtained in the last jump
+    int lastjump_f_value_sscc; // f value obtained in the last jump for sscc
     int lastjump_expanded_states; // same guy but at point where the last jump in the open list
     int lastjump_reopened_states; // occurred (jump == f-value of the first node in the queue increases)
     int lastjump_evaluated_states;
@@ -61,6 +62,7 @@ public:
 
     // f-value
     void report_f_value(int f);
+    int return_lastjump_f_value();
 
     // h-value
     void get_initial_h_values();
@@ -74,7 +76,9 @@ public:
     void print_statistics() const;
 
     //sscc
-    bool updated_lastjump_f_value(int f);
+    bool updated_lastjump_f_value_sscc(int f);
+    bool showReportLastjump(int f);
+
 };
 
 #endif
