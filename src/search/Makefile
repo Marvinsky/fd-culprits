@@ -163,6 +163,7 @@ HEADERS += ss/type_child.h \
            ss/type.h \
            ss/type_system.h \
            ss/node2.h \
+           ss/node.h \
            ss/ss_search.h \
 
 HEADERS += dfs/dfs_search.h \

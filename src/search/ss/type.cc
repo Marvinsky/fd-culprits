@@ -1,93 +1,59 @@
-#include <iostream>
-
 #include "type.h"
+#include <algorithm>
 
-using namespace::std;
+#include <vector>
 
-Type::Type()
-{
-	this->p      = -1;
-	this->h      = -1;
-	this->label  = -1;
-	this->random = -1;
-	this->best_h = -1;
+Type::Type() {
+        vector<int> aux (0, 0);
+	this->hcs = aux;
+        this->level = -1;
 }
 
-Type::Type(long parent, int heuristic)
-{
-	this->p      = parent;
-	this->h      = heuristic;
-	this->label  = -1;
-	this->random = -1;
-	this->best_h = -1;
+Type::Type(vector<int> hcs1, int l) {
+	this->hcs = hcs1;
+        this->level = l;
 }
 
-void Type::print() const
-{
-	cout << level << " " << p << " " << h << " " << endl;
-	this->children.print();
+vector<int> Type::getHC() const {
+	return this->hcs;
 }
 
+void Type::setHC(vector<int> hcs1) {
+	this->hcs = hcs1;
+}
 
-bool operator< (const Type& o1, const Type& o2)
-{
-     // node level is implicit in node class ("p" below)
+int Type::getLevel() const {
+	return this->level;
+}
 
-	if(o1.level != o2.level)
-	{
-		return o1.level < o2.level;
-	}
+void Type::setLevel(int l) {
+	this->level = l;
+}
 
-	if(o1.best_h != o2.best_h)
-	{
-		return o1.best_h < o2.best_h;  // lower index first
-	}
+void Type::print() const {
+	
+}
 
-	if(o1.p != o2.p)
-	{
-		return o1.p < o2.p;  // lower index first
-	}
+bool operator< (const Type& o1, const Type& o2) {
+        if (o1.hcs != o2.hcs) {
+           return o1.hcs < o2.hcs;
+        }
 
-	if(o1.h != o2.h)
-	{
-		return o1.h < o2.h;  // higher heuristic values first
-	}
-
-	return false; //o1.children < o2.children;
+        if (o1.level != o2.level) {
+           return o1.level < o2.level;
+        }
+	
+        return false;
 }
 
 Type& Type::operator=(const Type &rhs) {
+        this->hcs = rhs.hcs;
 	this->level = rhs.level;
-	this->best_h = rhs.best_h;
-	this->p = rhs.p;
-	this->h = rhs.h;
 	return *this;
 }
 
 bool Type::operator==(const Type &rhs) const {
+	if (this->hcs != rhs.hcs) return false;
 	if (this->level != rhs.level) return false;
-	if (this->best_h != rhs.best_h) return false;
-	if (this->p != rhs.p) return false;
-	if (this->h != rhs.h) return false;
-	return true;	
+	return true;
 }
-
-/*
-bool Type::operator<(const Type &rhs) const {
-	if (this->level == rhs.level && this->best_h == rhs.best_h && this->p == rhs.p && this->h == rhs.h) {
-		return true;
-	}
-	if (this->level == rhs.level && this->best_h == rhs.best_h && this->p == rhs.p) {
-		return true;
-	}
-	if (this->level == rhs.level && this->best_h == rhs.best_h) {
-		return true;
-	}
-	if (this->level == rhs.level) {
-		return true;
-	}
-	return false;
-}
-*/
-
-int Type::lookahead = 0;

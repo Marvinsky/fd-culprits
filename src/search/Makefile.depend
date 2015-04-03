@@ -7768,18 +7768,13 @@
  pdbs/../open_lists/../rng.h pdbs/../utilities.h
 .obj/ss/type_child.release.o: ss/type_child.cc ss/type_child.h
 .obj/ss/type_children.release.o: ss/type_children.cc ss/type_children.h ss/type_child.h
-.obj/ss/type.release.o: ss/type.cc ss/type.h ss/type_children.h ss/type_child.h
+.obj/ss/type.release.o: ss/type.cc ss/type.h
 .obj/ss/type_system.release.o: ss/type_system.cc ss/type_system.h ss/type.h \
- ss/type_children.h ss/type_child.h ss/../global_state.h \
- ss/../int_packer.h ss/../state_id.h ss/../heuristic.h \
- ss/../operator_cost.h ss/../scalar_evaluator.h ss/../evaluator.h \
- ss/../task_proxy.h ss/../abstract_task.h ss/../global_operator.h \
- ss/../global_state.h ss/../search_engine.h ss/../global_operator.h \
- ss/../search_space.h ss/../per_state_information.h ss/../globals.h \
- ss/../segmented_vector.h ss/../utilities.h ss/../state_registry.h \
- ss/../search_node_info.h ss/../search_progress.h ss/../timer.h \
- ss/../heuristic.h ss/../state_id.h ss/../globals.h ss/../option_parser.h \
- ss/../option_parser_util.h ext/tree.hh ext/tree_util.hh ext/tree.hh \
+ ss/../heuristic.h ss/../operator_cost.h ss/../scalar_evaluator.h \
+ ss/../evaluator.h ss/../task_proxy.h ss/../abstract_task.h \
+ ss/../global_state.h ss/../int_packer.h ss/../state_id.h ss/../globals.h \
+ ss/../option_parser.h ss/../option_parser_util.h ss/../utilities.h \
+ ss/../globals.h ext/tree.hh ext/tree_util.hh ext/tree.hh \
  ext/boost/any.hpp ext/boost/config.hpp ext/boost/config/user.hpp \
  ext/boost/config/select_compiler_config.hpp \
  ext/boost/config/compiler/gcc.hpp \
@@ -7882,20 +7877,10 @@
  ext/boost/type_traits/detail/cv_traits_impl.hpp \
  ext/boost/throw_exception.hpp ext/boost/static_assert.hpp \
  ext/boost/utility/enable_if.hpp ext/boost/core/enable_if.hpp \
- ext/boost/type_traits/is_same.hpp ss/../successor_generator.h \
- ss/../plugin.h ss/../open_lists/standard_scalar_open_list.h \
- ss/../open_lists/open_list.h ss/../open_lists/../evaluator.h \
- ss/../open_lists/standard_scalar_open_list.cc \
- ss/../open_lists/../scalar_evaluator.h \
- ss/../open_lists/../option_parser.h ss/../open_lists/open_list_buckets.h \
- ss/../open_lists/open_list_buckets.cc \
- ss/../open_lists/tiebreaking_open_list.h \
- ss/../open_lists/tiebreaking_open_list.cc \
- ss/../open_lists/alternation_open_list.h ss/../open_lists/../plugin.h \
- ss/../open_lists/alternation_open_list.cc \
- ss/../open_lists/pareto_open_list.h ss/../open_lists/pareto_open_list.cc \
- ss/../open_lists/../globals.h ss/../open_lists/../rng.h ss/../rng.h
+ ext/boost/type_traits/is_same.hpp ss/../heuristic.h \
+ ss/../successor_generator.h
 .obj/ss/node2.release.o: ss/node2.cc ss/node2.h
+.obj/ss/node.release.o: ss/node.cc ss/node.h
 .obj/ss/ss_search.release.o: ss/ss_search.cc ss/ss_search.h ss/../global_state.h \
  ss/../int_packer.h ss/../state_id.h ss/../heuristic.h \
  ss/../operator_cost.h ss/../scalar_evaluator.h ss/../evaluator.h \
@@ -7904,9 +7889,9 @@
  ss/../search_space.h ss/../per_state_information.h ss/../globals.h \
  ss/../segmented_vector.h ss/../utilities.h ss/../state_registry.h \
  ss/../search_node_info.h ss/../search_progress.h ss/../timer.h \
- ss/../heuristic.h ss/type.h ss/type_children.h ss/type_child.h \
- ss/type_system.h ss/../state_id.h ss/node2.h ss/../randomc/randomc.h \
- ss/../randomc/mersenne.cpp ss/../randomc/randomc.h \
+ ss/../heuristic.h ss/type.h ss/type_system.h ss/node.h \
+ ss/../randomc/randomc.h ss/../randomc/mersenne.cpp \
+ ss/../randomc/randomc.h ss/../state_id.h \
  ss/../ext/boost/dynamic_bitset.hpp \
  ext/boost/dynamic_bitset/dynamic_bitset.hpp \
  ext/boost/dynamic_bitset/config.hpp ext/boost/config.hpp \
@@ -15959,18 +15944,13 @@
  pdbs/../open_lists/../rng.h pdbs/../utilities.h
 .obj/ss/type_child.debug.o: ss/type_child.cc ss/type_child.h
 .obj/ss/type_children.debug.o: ss/type_children.cc ss/type_children.h ss/type_child.h
-.obj/ss/type.debug.o: ss/type.cc ss/type.h ss/type_children.h ss/type_child.h
+.obj/ss/type.debug.o: ss/type.cc ss/type.h
 .obj/ss/type_system.debug.o: ss/type_system.cc ss/type_system.h ss/type.h \
- ss/type_children.h ss/type_child.h ss/../global_state.h \
- ss/../int_packer.h ss/../state_id.h ss/../heuristic.h \
- ss/../operator_cost.h ss/../scalar_evaluator.h ss/../evaluator.h \
- ss/../task_proxy.h ss/../abstract_task.h ss/../global_operator.h \
- ss/../global_state.h ss/../search_engine.h ss/../global_operator.h \
- ss/../search_space.h ss/../per_state_information.h ss/../globals.h \
- ss/../segmented_vector.h ss/../utilities.h ss/../state_registry.h \
- ss/../search_node_info.h ss/../search_progress.h ss/../timer.h \
- ss/../heuristic.h ss/../state_id.h ss/../globals.h ss/../option_parser.h \
- ss/../option_parser_util.h ext/tree.hh ext/tree_util.hh ext/tree.hh \
+ ss/../heuristic.h ss/../operator_cost.h ss/../scalar_evaluator.h \
+ ss/../evaluator.h ss/../task_proxy.h ss/../abstract_task.h \
+ ss/../global_state.h ss/../int_packer.h ss/../state_id.h ss/../globals.h \
+ ss/../option_parser.h ss/../option_parser_util.h ss/../utilities.h \
+ ss/../globals.h ext/tree.hh ext/tree_util.hh ext/tree.hh \
  ext/boost/any.hpp ext/boost/config.hpp ext/boost/config/user.hpp \
  ext/boost/config/select_compiler_config.hpp \
  ext/boost/config/compiler/gcc.hpp \
@@ -16073,20 +16053,10 @@
  ext/boost/type_traits/detail/cv_traits_impl.hpp \
  ext/boost/throw_exception.hpp ext/boost/static_assert.hpp \
  ext/boost/utility/enable_if.hpp ext/boost/core/enable_if.hpp \
- ext/boost/type_traits/is_same.hpp ss/../successor_generator.h \
- ss/../plugin.h ss/../open_lists/standard_scalar_open_list.h \
- ss/../open_lists/open_list.h ss/../open_lists/../evaluator.h \
- ss/../open_lists/standard_scalar_open_list.cc \
- ss/../open_lists/../scalar_evaluator.h \
- ss/../open_lists/../option_parser.h ss/../open_lists/open_list_buckets.h \
- ss/../open_lists/open_list_buckets.cc \
- ss/../open_lists/tiebreaking_open_list.h \
- ss/../open_lists/tiebreaking_open_list.cc \
- ss/../open_lists/alternation_open_list.h ss/../open_lists/../plugin.h \
- ss/../open_lists/alternation_open_list.cc \
- ss/../open_lists/pareto_open_list.h ss/../open_lists/pareto_open_list.cc \
- ss/../open_lists/../globals.h ss/../open_lists/../rng.h ss/../rng.h
+ ext/boost/type_traits/is_same.hpp ss/../heuristic.h \
+ ss/../successor_generator.h
 .obj/ss/node2.debug.o: ss/node2.cc ss/node2.h
+.obj/ss/node.debug.o: ss/node.cc ss/node.h
 .obj/ss/ss_search.debug.o: ss/ss_search.cc ss/ss_search.h ss/../global_state.h \
  ss/../int_packer.h ss/../state_id.h ss/../heuristic.h \
  ss/../operator_cost.h ss/../scalar_evaluator.h ss/../evaluator.h \
@@ -16095,9 +16065,9 @@
  ss/../search_space.h ss/../per_state_information.h ss/../globals.h \
  ss/../segmented_vector.h ss/../utilities.h ss/../state_registry.h \
  ss/../search_node_info.h ss/../search_progress.h ss/../timer.h \
- ss/../heuristic.h ss/type.h ss/type_children.h ss/type_child.h \
- ss/type_system.h ss/../state_id.h ss/node2.h ss/../randomc/randomc.h \
- ss/../randomc/mersenne.cpp ss/../randomc/randomc.h \
+ ss/../heuristic.h ss/type.h ss/type_system.h ss/node.h \
+ ss/../randomc/randomc.h ss/../randomc/mersenne.cpp \
+ ss/../randomc/randomc.h ss/../state_id.h \
  ss/../ext/boost/dynamic_bitset.hpp \
  ext/boost/dynamic_bitset/dynamic_bitset.hpp \
  ext/boost/dynamic_bitset/config.hpp ext/boost/config.hpp \
@@ -24150,18 +24120,13 @@
  pdbs/../open_lists/../rng.h pdbs/../utilities.h
 .obj/ss/type_child.profile.o: ss/type_child.cc ss/type_child.h
 .obj/ss/type_children.profile.o: ss/type_children.cc ss/type_children.h ss/type_child.h
-.obj/ss/type.profile.o: ss/type.cc ss/type.h ss/type_children.h ss/type_child.h
+.obj/ss/type.profile.o: ss/type.cc ss/type.h
 .obj/ss/type_system.profile.o: ss/type_system.cc ss/type_system.h ss/type.h \
- ss/type_children.h ss/type_child.h ss/../global_state.h \
- ss/../int_packer.h ss/../state_id.h ss/../heuristic.h \
- ss/../operator_cost.h ss/../scalar_evaluator.h ss/../evaluator.h \
- ss/../task_proxy.h ss/../abstract_task.h ss/../global_operator.h \
- ss/../global_state.h ss/../search_engine.h ss/../global_operator.h \
- ss/../search_space.h ss/../per_state_information.h ss/../globals.h \
- ss/../segmented_vector.h ss/../utilities.h ss/../state_registry.h \
- ss/../search_node_info.h ss/../search_progress.h ss/../timer.h \
- ss/../heuristic.h ss/../state_id.h ss/../globals.h ss/../option_parser.h \
- ss/../option_parser_util.h ext/tree.hh ext/tree_util.hh ext/tree.hh \
+ ss/../heuristic.h ss/../operator_cost.h ss/../scalar_evaluator.h \
+ ss/../evaluator.h ss/../task_proxy.h ss/../abstract_task.h \
+ ss/../global_state.h ss/../int_packer.h ss/../state_id.h ss/../globals.h \
+ ss/../option_parser.h ss/../option_parser_util.h ss/../utilities.h \
+ ss/../globals.h ext/tree.hh ext/tree_util.hh ext/tree.hh \
  ext/boost/any.hpp ext/boost/config.hpp ext/boost/config/user.hpp \
  ext/boost/config/select_compiler_config.hpp \
  ext/boost/config/compiler/gcc.hpp \
@@ -24264,20 +24229,10 @@
  ext/boost/type_traits/detail/cv_traits_impl.hpp \
  ext/boost/throw_exception.hpp ext/boost/static_assert.hpp \
  ext/boost/utility/enable_if.hpp ext/boost/core/enable_if.hpp \
- ext/boost/type_traits/is_same.hpp ss/../successor_generator.h \
- ss/../plugin.h ss/../open_lists/standard_scalar_open_list.h \
- ss/../open_lists/open_list.h ss/../open_lists/../evaluator.h \
- ss/../open_lists/standard_scalar_open_list.cc \
- ss/../open_lists/../scalar_evaluator.h \
- ss/../open_lists/../option_parser.h ss/../open_lists/open_list_buckets.h \
- ss/../open_lists/open_list_buckets.cc \
- ss/../open_lists/tiebreaking_open_list.h \
- ss/../open_lists/tiebreaking_open_list.cc \
- ss/../open_lists/alternation_open_list.h ss/../open_lists/../plugin.h \
- ss/../open_lists/alternation_open_list.cc \
- ss/../open_lists/pareto_open_list.h ss/../open_lists/pareto_open_list.cc \
- ss/../open_lists/../globals.h ss/../open_lists/../rng.h ss/../rng.h
+ ext/boost/type_traits/is_same.hpp ss/../heuristic.h \
+ ss/../successor_generator.h
 .obj/ss/node2.profile.o: ss/node2.cc ss/node2.h
+.obj/ss/node.profile.o: ss/node.cc ss/node.h
 .obj/ss/ss_search.profile.o: ss/ss_search.cc ss/ss_search.h ss/../global_state.h \
  ss/../int_packer.h ss/../state_id.h ss/../heuristic.h \
  ss/../operator_cost.h ss/../scalar_evaluator.h ss/../evaluator.h \
@@ -24286,9 +24241,9 @@
  ss/../search_space.h ss/../per_state_information.h ss/../globals.h \
  ss/../segmented_vector.h ss/../utilities.h ss/../state_registry.h \
  ss/../search_node_info.h ss/../search_progress.h ss/../timer.h \
- ss/../heuristic.h ss/type.h ss/type_children.h ss/type_child.h \
- ss/type_system.h ss/../state_id.h ss/node2.h ss/../randomc/randomc.h \
- ss/../randomc/mersenne.cpp ss/../randomc/randomc.h \
+ ss/../heuristic.h ss/type.h ss/type_system.h ss/node.h \
+ ss/../randomc/randomc.h ss/../randomc/mersenne.cpp \
+ ss/../randomc/randomc.h ss/../state_id.h \
  ss/../ext/boost/dynamic_bitset.hpp \
  ext/boost/dynamic_bitset/dynamic_bitset.hpp \
  ext/boost/dynamic_bitset/config.hpp ext/boost/config.hpp \
