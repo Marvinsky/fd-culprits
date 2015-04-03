@@ -157,13 +157,20 @@ void SSSearch::probe()
                 int level = out.getLevel();
  
                 vector<int> h_global_v = out.getHC();
-
+                boost::dynamic_bitset<> b_raiz_v(heuristics.size());
                 vector<int> f_global_v;
+
                 for (size_t i = 0; i < h_global_v.size(); i++) {
                     int h_value = h_global_v.at(i);
                     f_global_v.push_back(h_value + g_real);
 		}
 
+                for (size_t i = 0; f_global_v.size(); i++) {
+                    int f_value = f_global_v.at(i);
+                    if (f_value <= threshold) {
+                     	b_raiz_v.set(i);
+                    }
+                }
                 //printQueue();
 
                 std::map<Type, SSNode>::iterator rt;
@@ -197,23 +204,23 @@ void SSSearch::probe()
                 Node node(f_global_v, level);
 
                 //count nodes expanded
+                if (b_raiz_v.count() > 0) {
+			std::pair<std::map<Node, double>::iterator, bool> ret0;
 
-                std::pair<std::map<Node, double>::iterator, bool> ret0;
+                	std::map<Node, double>::iterator it0;
 
-                std::map<Node, double>::iterator it0;
+                	ret0 = expanded.insert(pair<Node, double>(node, s.getWeight()));
+                	it0 = ret0.first;
 
-                ret0 = expanded.insert(pair<Node, double>(node, s.getWeight()));
-                it0 = ret0.first;
-
-                if (ret0.second) {
-                    //cout<<"new node expanded is added."<<endl;
-                } else {
-                    //cout<<"node expanded is being updated."<<endl;
-                    it0->second += s.getWeight();
-                    //cout<<"it0->second = "<<it0->second<<endl;
+                	if (ret0.second) {
+                    		//cout<<"new node expanded is added."<<endl;
+                	} else {
+                    		//cout<<"node expanded is being updated."<<endl;
+                    		it0->second += s.getWeight();
+                    		//cout<<"it0->second = "<<it0->second<<endl;
+                	}
                 }
-
-                //end count node
+                //end count nodes expanded
 
 
 		double w = (double)s.getWeight();
@@ -298,7 +305,7 @@ void SSSearch::probe()
           
              		std::map<boost::dynamic_bitset<>, double>::iterator it2; 
       
-
+                        //add to the collector
              		if (b_child_v.count() > 0) {
  	     			ret2 = collector.insert(std::pair<boost::dynamic_bitset<>, double>(b_child_v, amount*w));
              			it2 = ret2.first;
@@ -310,8 +317,8 @@ void SSSearch::probe()
                 			it2->second += amount*w;
                 			//cout<<", newcc : "<<it2->second<<"\n"; 
              			}
-             		}	
-                
+             		}
+                        //Make pruning
                         if (b_child_v.count() > 0) {
 			   Type object = sampler->getType(h_child_v, level + 1);
 			    
@@ -324,24 +331,24 @@ void SSSearch::probe()
 		           child_node.setGreal(g_real + get_adjusted_cost(*op)); 
 
 
-			cout<<"\nCheck for duplicate: h = "; 
-                  	for (size_t i = 0; i < h_child_v.size(); i++) {
+			   cout<<"\nCheck for duplicate: h = "; 
+                  	   for (size_t i = 0; i < h_child_v.size(); i++) {
                       		int h_value = h_child_v.at(i);
                       		cout<<h_value;
                       		if (i != h_child_v.size() -1) {
                          		cout<<"/";
                       		}	
-                  	}
-                        cout<<", g_real = "<<g_real + get_adjusted_cost(*op)<<" f = ";
-                        for (size_t i = 0; i < h_child_v.size(); i++) {
-                            int h_value = h_child_v.at(i);
-                            cout<<h_value + g_real  +  get_adjusted_cost(*op);
- 		            if (i != h_child_v.size() -1) {
-                         	cout<<"/";
-                      	    }
-                        }
-                        cout<<", level = "<<level + 1<<"\n";
-                        queue.insert( pair<Type, SSNode>( object, child_node ) );
+                  	   }
+                           cout<<", g_real = "<<g_real + get_adjusted_cost(*op)<<" f = ";
+                           for (size_t i = 0; i < h_child_v.size(); i++) {
+                               int h_value = h_child_v.at(i);
+                               cout<<h_value + g_real  +  get_adjusted_cost(*op);
+ 		               if (i != h_child_v.size() -1) {
+                         	  cout<<"/";
+                      	       }
+                           }
+                           cout<<", level = "<<level + 1<<"\n";
+                           queue.insert( pair<Type, SSNode>( object, child_node ) );
 
                            
                            map<Type, SSNode>::iterator queueIt = queue.find( object );
