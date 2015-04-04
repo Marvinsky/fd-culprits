@@ -62,7 +62,7 @@ private:
 	std::map<int, SSNode> open;
 	map<Type, SSNode> queue;
         map<Type, double> S; 
-        vector<SSNode> vweight;
+        vector<double> vweight;
         std::map<Node, double> expanded;
 
         std::map<Node, double> generated;

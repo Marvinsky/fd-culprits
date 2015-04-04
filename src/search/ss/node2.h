@@ -5,18 +5,15 @@
 
 class Node2 {
 private:
-      int f_value;
+      long f_value;
       int level;
-      int q_value;
 public:
       Node2();
-      Node2(int f, int l);
-      int getF();
-      void setF(int f);
+      Node2(long f, int l);
+      long getF();
+      void setF(long f);
       int getL();
-      void setL(int l);
-      int getQ();
-      void setQ(int q);
+      void setL(int l); 
       friend bool operator< (const Node2 &n1, const Node2 &n2);
 };
 #endif

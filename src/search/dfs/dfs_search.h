@@ -29,15 +29,18 @@ private:
         StateID id;
 	int h_value;
         int g_value;
+        int level;
 public:
-        SSNode() : id(StateID::no_state), h_value(-1), g_value(-1) {}     
-	SSNode(StateID identifier, int h, int g) : id(identifier), h_value(h), g_value(g) {}
+        SSNode() : id(StateID::no_state), h_value(-1), g_value(-1), level(-1) {}     
+	SSNode(StateID identifier, int h, int g, int l) : id(identifier), h_value(h), g_value(g), level(l) {}
         StateID get_id() {return this->id;}
         void set_id(StateID identifier) {this->id = identifier;}
         int get_h_value() {return this->h_value;}
         void set_h_value(int h) {this->h_value = h;}
         int get_g_value() {return this->g_value;}
         void set_g_value(int g) {this->g_value = g;}
+        int getLevel() {return this->level;}
+        void setLevel(int l) {this->level = l;}
 };
 
 class DFSSearch : public SearchEngine {

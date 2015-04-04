@@ -120,7 +120,7 @@ SearchStatus DFSSearch::step() {
         cout<<"h_initial = "<<h_initial<<endl;
         
         StateID initial_state_id = initial_state.get_id();
-        SSNode node(initial_state_id, h_initial, 0);
+        SSNode node(initial_state_id, h_initial, 0, 0);//Setting the max initial heuristic value, the g_real and the level
     
         depth = 2*h_initial;
 	cout<<"depth ="<<depth<<endl;
@@ -129,14 +129,15 @@ SearchStatus DFSSearch::step() {
 
         while (!queue.empty()) {
               SSNode nodecp = queue.top();
-              int g = nodecp.get_g_value();
-              //cout<<"Raiz: h = "<<nodecp.get_h_value()<<", g = "<<g<<", f = "<<nodecp.get_h_value() + g<<"\n";
+              int g_real = nodecp.get_g_value();
+              int level = nodecp.getLevel();
+              //cout<<"Raiz: h = "<<nodecp.get_h_value()<<", g = "<<g_real<<", f = "<<nodecp.get_h_value() + g_real<<", level = "<<level<<"\n";
 	      queue.pop();
 
               StateID state_id = nodecp.get_id();
 
-              Node2 node2(nodecp.get_h_value() + g, g);
-              int new_f_value = nodecp.get_h_value() + g;
+              Node2 node2(nodecp.get_h_value() + g_real, level);
+              int new_f_value = nodecp.get_h_value() + g_real;
 	      if (search_progress.updated_lastjump_f_value_sscc(new_f_value)) {
                 
                  bool flag = search_progress.showReportLastjump(new_f_value);
@@ -147,19 +148,22 @@ SearchStatus DFSSearch::step() {
               }
                
 	      //count nodes expanded
-              std::pair<std::map<Node2, double>::iterator, bool> ret0;
-              std::map<Node2, double>::iterator it0;
+              if (new_f_value <= depth) {
+		std::pair<std::map<Node2, double>::iterator, bool> ret0;
+              	std::map<Node2, double>::iterator it0;
 
-              ret0 = expanded.insert(pair<Node2, double>(node2, 1));
-              it0 = ret0.first;
+              	ret0 = expanded.insert(pair<Node2, double>(node2, 1));
+              	it0 = ret0.first;
 
-              if (ret0.second) {
+              	if (ret0.second) {
 
-	      } else {
-		it0->second += 1;
-	      } 
+	      	} else {
+		   it0->second += 1;
+	      	} 
 
-              count_nodes++;
+              	count_nodes++;
+              }
+
 
               std::vector<const GlobalOperator *> applicable_ops;
 
@@ -203,7 +207,7 @@ SearchStatus DFSSearch::step() {
                   search_progress.inc_generated();
 
 
-                  SSNode succ_node(child.get_id(), succ_h, g + get_adjusted_cost(*op));
+                  SSNode succ_node(child.get_id(), succ_h, g_real + get_adjusted_cost(*op), level + 1);
                   //cout<<"\tNode generated: h = "<<succ_h<<", g = "<<succ_node.get_g_value()<<", f = "<<succ_h + succ_node.get_g_value()<<"\n";
 
                   if (succ_h + succ_node.get_g_value() <= depth) {
@@ -259,7 +263,7 @@ SearchStatus DFSSearch::step() {
 
     	for (int i = 0; i <= depth; i++) {
        		int k = 0;
-       		vector<int> f;
+       		vector<long> f;
        		vector<double> q;
        		for (map<Node2, double>::iterator iter = expanded.begin(); iter != expanded.end(); iter++) {
            		Node2 n = iter->first;
@@ -297,7 +301,7 @@ void DFSSearch::generateGeneratedReport(bool flag) {
         }
 
         if (flag) {
-		cout<<", Total of nodes generated: "<<nodes_total_generated<<endl;
+		cout<<"Total of nodes generated: "<<nodes_total_generated<<endl;
 	} else {
 		cout<<", Parcial of nodes generated: "<<nodes_total_generated<<endl;
 	}

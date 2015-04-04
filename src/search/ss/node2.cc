@@ -5,16 +5,16 @@ Node2::Node2() {
 	this->level = -1;
 }
 
-Node2::Node2(int f, int l) {
+Node2::Node2(long f, int l) {
 	this->f_value = f;
 	this->level = l;
 }
 
-int Node2::getF()  {
+long Node2::getF()  {
 	return this->f_value;
 }
 
-void Node2::setF(int f) {
+void Node2::setF(long f) {
 	this->f_value = f;
 }
 
@@ -24,14 +24,6 @@ int Node2::getL() {
 
 void Node2::setL(int l) {
 	this->level = l;
-}
-
-int Node2::getQ() {
-	return this->q_value;
-}
-
-void Node2::setQ(int q) {
-	this->q_value = q;
 }
 
 bool operator< (const Node2 &n1, const Node2 &n2) {

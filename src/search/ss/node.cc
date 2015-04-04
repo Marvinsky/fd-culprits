@@ -2,21 +2,22 @@
 
 Node::Node() {
         std::vector<int> aux(0, 0);
+        
 	this->f_values = aux;
 	this->level = -1;
 }
 
-Node::Node(std::vector<int> fs, int l) {
-	this->f_values = fs;
+Node::Node(const std::vector<int> &fs, int l) {
+        this->f_values = fs; 
 	this->level = l;
 }
 
-std::vector<int> Node::getFs()  {
+std::vector<int> const &Node::getFs()  {
 	return this->f_values;
 }
 
-void Node::setFs(std::vector<int> fs) {
-	this->f_values = fs;
+void Node::setFs(const std::vector<int> &fs) {
+        this->f_values = fs;
 }
 
 int Node::getL() {

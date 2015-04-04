@@ -82,7 +82,7 @@ void SSSearch::probe()
 	initial_value = min_h;
 
         //for the open domains the heuristic is set to six
-        threshold = 23;//2*initial_value;
+        threshold = 2*initial_value;
 
         const GlobalState &initial_state = g_initial_state();
         vector<int> h_initial_v;
@@ -156,16 +156,16 @@ void SSSearch::probe()
                	int g_real =  s.getGreal();
                 int level = out.getLevel();
  
-                vector<int> h_global_v = out.getHC();
+                std::vector<int> h_global_v = out.getHC();
                 boost::dynamic_bitset<> b_raiz_v(heuristics.size());
-                vector<int> f_global_v;
+                std::vector<int> f_global_v;
 
                 for (size_t i = 0; i < h_global_v.size(); i++) {
                     int h_value = h_global_v.at(i);
                     f_global_v.push_back(h_value + g_real);
 		}
 
-                for (size_t i = 0; f_global_v.size(); i++) {
+                for (size_t i = 0; i < f_global_v.size(); i++) {
                     int f_value = f_global_v.at(i);
                     if (f_value <= threshold) {
                      	b_raiz_v.set(i);
@@ -197,19 +197,20 @@ void SSSearch::probe()
                     }
 		}
                 cout<<", level = "<<level<<"\n";
-		vweight.push_back(s);
+		vweight.push_back(s.getWeight());
 		
 	        
                 //Insert each node.
                 Node node(f_global_v, level);
-
+                //node.setFs(f_global_v);
+                //node.setL(level);
                 //count nodes expanded
                 if (b_raiz_v.count() > 0) {
 			std::pair<std::map<Node, double>::iterator, bool> ret0;
 
                 	std::map<Node, double>::iterator it0;
 
-                	ret0 = expanded.insert(pair<Node, double>(node, s.getWeight()));
+                	ret0 = expanded.insert(std::pair<Node, double>(node, s.getWeight()));
                 	it0 = ret0.first;
 
                 	if (ret0.second) {
@@ -554,8 +555,8 @@ double SSSearch::getProbingResult() {
         double expansions = 0;
         
         for (size_t i = 0; i < vweight.size(); i++) {
-             SSNode n = vweight.at(i);
-             expansions += n.getWeight();
+             double n = vweight.at(i);
+             expansions += n;
         }
 	cout << endl;
         cout<<"expansions = "<<expansions<<endl;
@@ -565,9 +566,8 @@ double SSSearch::getProbingResult() {
 void SSSearch::printQueue() {
         cout<<"\nPrintQueue\n";
 	for (map<Type, SSNode>::iterator iter = queue.begin(); iter !=  queue.end(); iter++) {
-            Type t = iter->first;
             SSNode t2  = iter->second;
-            cout<<"\t\t  g = "<<t.getLevel()<<"  w = "<<t2.getWeight()<<"\n"; 
+            cout<<"\t\t  g = "<<t2.getGreal()<<"  w = "<<t2.getWeight()<<"\n"; 
         }
         cout<<"\n";
         cout<<"\nEnd PrintQueue\n";

@@ -11,9 +11,9 @@ private:
       int level;
 public:
       Node();
-      Node(std::vector<int> f, int l);
-      std::vector<int> getFs();
-      void setFs(std::vector<int> fs);
+      Node(const std::vector<int> &fs, int l);
+      std::vector<int> const  &getFs();
+      void setFs(const std::vector<int> &fs);
       int getL();
       void setL(int l);
       friend bool operator< (const Node &n1, const Node &n2);
