@@ -20,7 +20,7 @@ public:
 	TypeSystem(std::vector<Heuristic*> heuristics);
         ~TypeSystem();
 
-        Type getType(std::vector<int> hcs, int level);
+        Type getType(const std::vector<int> &hcs, const int &level) const;
 };
 
 #endif

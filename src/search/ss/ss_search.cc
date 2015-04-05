@@ -147,7 +147,7 @@ void SSSearch::probe()
 
 	queue.insert( pair<Type, SSNode>( type, node ) );
 
-        int nraiz = 1;
+        int nraiz = 0;
   
 	while( !queue.empty() )
 	{
@@ -155,6 +155,8 @@ void SSSearch::probe()
 		SSNode s = queue.begin()->second;
                	int g_real =  s.getGreal();
                 int level = out.getLevel();
+		double w = s.getWeight();
+		
  
                 std::vector<int> h_global_v = out.getHC();
                 boost::dynamic_bitset<> b_raiz_v(heuristics.size());
@@ -180,7 +182,7 @@ void SSSearch::probe()
 		queue.erase( rt );
                    
                 nraiz++;                
-                cout<<"raiz: "<<nraiz<<" h  = "; 
+                cout<<"Raiz: "<<nraiz<<" h  = "; 
 		for (size_t i = 0; i < h_global_v.size(); i++) {
                     int h_value = h_global_v.at(i);
 		    cout<<h_value;
@@ -196,7 +198,9 @@ void SSSearch::probe()
                        cout<<"/";
                     }
 		}
-                cout<<", level = "<<level<<"\n";
+                cout<<", level = "<<level;
+                cout<<", w = "<<w<<"\n";
+
 		vweight.push_back(s.getWeight());
 		
 	        
@@ -222,10 +226,6 @@ void SSSearch::probe()
                 	}
                 }
                 //end count nodes expanded
-
-
-		double w = (double)s.getWeight();
-		//cout<<"w = "<<w<<endl;
  
                 std::vector<const GlobalOperator*> applicable_ops;
                 GlobalState global_state = g_state_registry->lookup_state(s.getId()); 
@@ -249,6 +249,7 @@ void SSSearch::probe()
                    //cout<<"new = "<<it->second<<endl;
                 }
                  //end count nodes generated
+                cout<<"\t__________________________________________begin Childs_____________________________________\n";
 		for (size_t i = 0; i < applicable_ops.size(); ++i)
 		{
                         const GlobalOperator *op = applicable_ops[i];
@@ -269,11 +270,10 @@ void SSSearch::probe()
 
                   	//cout<<"dump beging"<<endl;
                   	//child.dump_inline();
-                  	//cout<<"dump end"<<endl; 
-                  	cout<<"*******************Child #"<<i<<"********************"<<endl;
-                  
+                  	//cout<<"dump end"<<endl;
                   	heur_name_v.clear();
-                  	cout<<"\nh = "; 
+                        cout<<"\tget_adjusted_cost(*op) = "<<get_adjusted_cost(*op)<<"\n";
+                  	cout<<"\tChild_"<<(i+1)<<" : h = "; 
                   	for (size_t i = 0; i < h_child_v.size(); i++) {
                       		int h_value = h_child_v.at(i);
                       		cout<<h_value;
@@ -292,7 +292,8 @@ void SSSearch::probe()
                          	cout<<"/";
                       	    }
                         }
-                        cout<<", level = "<<level + 1<<"\n";
+                        cout<<", level = "<<(level + 1);
+                        cout<<", w = "<<w<<"\n";
 
 	     		std::vector<const GlobalOperator *> applicable_ops_2;
              
@@ -322,8 +323,9 @@ void SSSearch::probe()
                         //Make pruning
                         if (b_child_v.count() > 0) {
 			   Type object = sampler->getType(h_child_v, level + 1);
-			    
+			   object.setHC(h_child_v); 
                            object.setLevel( level + 1 );
+                           object.print();
 
                            SSNode child_node;
                            StateID child_state_id = child.get_id();
@@ -332,7 +334,7 @@ void SSSearch::probe()
 		           child_node.setGreal(g_real + get_adjusted_cost(*op)); 
 
 
-			   cout<<"\nCheck for duplicate: h = "; 
+			   cout<<"\t\tChild f<=threshold: h = "; 
                   	   for (size_t i = 0; i < h_child_v.size(); i++) {
                       		int h_value = h_child_v.at(i);
                       		cout<<h_value;
@@ -349,18 +351,38 @@ void SSSearch::probe()
                       	       }
                            }
                            cout<<", level = "<<level + 1<<"\n";
+
                            queue.insert( pair<Type, SSNode>( object, child_node ) );
 
                            
                            map<Type, SSNode>::iterator queueIt = queue.find( object );
 			   if( queueIt != queue.end() )
 			   {
-                                cout<<"\t\tIts a duplicate node."<<endl;
-
        	                        SSNode snode = queueIt->second;
+
+                                cout<<"\t\tThe duplicate node is: h = ";
+                                for (size_t i = 0; i < h_child_v.size(); i++) {
+                      		    int h_value = h_child_v.at(i);
+                      		    cout<<h_value;
+                      		    if (i != h_child_v.size() -1) {
+                         		cout<<"/";
+                      		    }	
+                  	        }
+                                cout<<", g_real = "<<g_real + get_adjusted_cost(*op)<<" f = ";
+                                for (size_t i = 0; i < h_child_v.size(); i++) {
+                                    int h_value = h_child_v.at(i);
+                                    cout<<h_value + g_real  +  get_adjusted_cost(*op);
+ 		                    if (i != h_child_v.size() -1) {
+                         	       cout<<"/";
+                      	            }
+                                }
+                                cout<<", w = "<<snode.getWeight();
+                                cout<<", level = "<<level + 1<<"\n";
+
 				double wa = (double)snode.getWeight();
 				//snode.setWeight( wa + w);
-                                queueIt->second.setWeight(wa + w); 
+                                queueIt->second.setWeight(wa + w);
+                                cout<<"\t\tbefore ss process starts, the w of the duplicate node is updated to: "<<queueIt->second.getWeight()<<endl;
                                 //std::pair<std::map<Type, SSNode>::iterator, bool> ret0;
 
                                 //ret0 = queue.insert(pair<Type, SSNode>(object, snode));
@@ -379,7 +401,7 @@ void SSSearch::probe()
                                         cout<<"\t\tAdded even though is duplicate.\n";
                                         
 				        child_node.setWeight( wa + w);
-                                        
+                                        cout<<"\t\tthe w is updated to = "<<child_node.getWeight()<<endl;
                                         std::pair<std::map<Type, SSNode>::iterator, bool> ret;
                                      	queue.erase(object); 
 
@@ -391,6 +413,7 @@ void SSSearch::probe()
                                       	
 				} else {
                                         cout<<"\t\tNot added.\n";
+                                        cout<<"\t\tbut the w is updated for the node that already exists to: "<<queueIt->second.getWeight()<<endl;
                                 }
 			   } 
 			   else
@@ -403,8 +426,9 @@ void SSSearch::probe()
 			{
 				cout << "\tNode was pruned!" << endl;
 			}
-                        cout<<"*******************end child******************************\n";
+                        cout<<"\tend Child_"<<(i+1)<<"\n";
 		}
+                cout<<"\t_____________________________________end Childs________________________________________\n";
 	}
 }
 

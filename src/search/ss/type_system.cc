@@ -14,7 +14,7 @@ TypeSystem::~TypeSystem() {
 
 }
 
-Type TypeSystem::getType(std::vector<int> hcs, int level) {
+Type TypeSystem::getType(const std::vector<int> &hcs, const int &level) const{
 	Type obj(hcs, level);
         return obj;
 }

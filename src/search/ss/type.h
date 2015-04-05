@@ -11,7 +11,7 @@ private:
         int level;
 public:
 	Type();
-	Type(vector<int> hcs1, int l);
+	Type(const std::vector<int> &hcs1, int l);
 
 	friend bool operator< (const Type&, const Type&);
 
@@ -21,8 +21,8 @@ public:
         int getLevel() const;
         void setLevel(int l);
 
-	vector<int> getHC() const;
-        void setHC(vector<int> hcs1);
+	std::vector<int> const &getHC() const;
+        void setHC(const std::vector<int> &hcs1);
 
         void print() const;
 };
