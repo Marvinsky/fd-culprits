@@ -30,9 +30,18 @@ SSSearch::SSSearch(const Options &opts) : SearchEngine(opts), current_state(g_in
 		heuristics.push_back(*it);
 	}
 	assert(heuristics.size() == 1);
-	heuristic = heuristics[0];
 
-	sampler = new TypeSystem(heuristics);
+	int min_h = INT_MAX/2;
+        for (size_t i = 0; i < heuristics.size(); i++) {
+            heuristics[i]->evaluate(g_initial_state());
+            int aux = heuristics[i]->get_heuristic();
+            if (min_h > aux) {
+		min_h = aux;
+                heuristic = heuristics[i];
+	    }
+	}
+        cout<<"min_h(constructor) = "<<min_h<<endl;
+	sampler = new TypeSystem(heuristic);
 	this->RanGen2 = new CRandomMersenne((unsigned)time(NULL));        
 }
 
@@ -130,19 +139,22 @@ void SSSearch::probe()
  	collector.insert(std::pair<boost::dynamic_bitset<>, double>(b_initial_v, 1 + amount_initial));
 
         //cout<<"\n";
-        SSNode node;
+        
         const GlobalState &initial_state2 = g_initial_state();
         StateID initial_state_id = initial_state2.get_id();
-        node.setId(initial_state_id);
+	
+	SSNode node;
+	node.setId(initial_state_id);
         node.setWeight(1.0);
         node.setGreal(0);  //g_real value of the node
+        node.setHC(h_initial_v);
 	/*
 	 * Seeding the prediction with the children of the start state
 	 *
 	 */
-	Type type = sampler->getType(h_initial_v, 0);
-          
- 
+        cout<<"getMinHeur(h_initial_v) = "<<getMinHeur(h_initial_v)<<"\n";
+	Type type = sampler->getType(node.getId(), getMinHeur(h_initial_v), 1);
+
 	type.setLevel( 0 ); // level where the node is located
 
 	queue.insert( pair<Type, SSNode>( type, node ) );
@@ -153,12 +165,13 @@ void SSSearch::probe()
 	{
 		Type out = queue.begin()->first;
 		SSNode s = queue.begin()->second;
+
                	int g_real =  s.getGreal();
                 int level = out.getLevel();
-		double w = s.getWeight();
-		
- 
-                std::vector<int> h_global_v = out.getHC();
+		double w = s.getWeight(); 
+                std::vector<int> h_global_v = s.getHC();
+
+
                 boost::dynamic_bitset<> b_raiz_v(heuristics.size());
                 std::vector<int> f_global_v;
 
@@ -322,17 +335,18 @@ void SSSearch::probe()
              		}
                         //Make pruning
                         if (b_child_v.count() > 0) {
-			   Type object = sampler->getType(h_child_v, level + 1);
-			   object.setHC(h_child_v); 
+                           int h_min_heur = getMinHeur(h_child_v);
+                           cout<<"getMinHeur(h_child_v) = "<<h_min_heur<<"\n";
+			   Type object = sampler->getType(child.get_id(), h_min_heur, 1);
+			   
                            object.setLevel( level + 1 );
-                           object.print();
-
+                           
                            SSNode child_node;
                            StateID child_state_id = child.get_id();
                            child_node.setId(child_state_id);
                            child_node.setWeight(w);
 		           child_node.setGreal(g_real + get_adjusted_cost(*op)); 
-
+ 			   child_node.setHC(h_child_v);
 
 			   cout<<"\t\tChild f<=threshold: h = "; 
                   	   for (size_t i = 0; i < h_child_v.size(); i++) {
@@ -430,6 +444,17 @@ void SSSearch::probe()
 		}
                 cout<<"\t_____________________________________end Childs________________________________________\n";
 	}
+}
+
+int SSSearch::getMinHeur(vector<int> v) {
+	int h_min = INT_MAX/2;
+	for (size_t i = 0; i < v.size(); i++) {
+		int aux = v.at(i);
+		if (h_min > aux) {
+			h_min = aux;
+		}
+	}
+	return h_min;
 }
 
 void SSSearch::generateGeneratedReport() {

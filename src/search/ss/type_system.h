@@ -1,26 +1,34 @@
-#ifndef TYPE_SYSTEM_H_
-#define TYPE_SYSTEM_H_
+#ifndef TYPE_SYSTEM_h__
+#define TYPE_SYSTEM_h__
 
 #include <vector>
 #include <string>
 
 #include "type.h"
-#include "../heuristic.h"
+#include "type_children.h"
 #include "../global_state.h"
-
+#include "../heuristic.h"
+#include "../global_operator.h"
+#include "../search_engine.h"
+#include "../state_id.h"
 
 
 using namespace::std;
 
+
 class TypeSystem {
 private:
-	std::vector<Heuristic*> heuristics;
+
+	void sample(StateID id, int parent_heuristic, TypeChildren& children, int type, int current_level);
+	short* getEmptyFeatures(int lookahead);
+	Heuristic* heuristic;
+	int best_h;
 
 public:
-	TypeSystem(std::vector<Heuristic*> heuristics);
-        ~TypeSystem();
+	TypeSystem(Heuristic* heuristic);
+	~TypeSystem();
 
-        Type getType(const std::vector<int> &hcs, const int &level) const;
+	Type getType(StateID id, int h, int type);
 };
 
 #endif

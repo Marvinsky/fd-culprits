@@ -38,15 +38,18 @@ private:
 	StateID id;
 	double weight;
         int g_real;
+	vector<int> hc;
 public:
         SSNode(): id(StateID::no_state), weight(0.0), g_real(0) {}
         SSNode(StateID identifier, double w, int g) : id(identifier), weight(w), g_real(g){}
         StateID getId() const {return this->id;}
-        void setId(StateID identifier) {this->id = identifier;}
+	void setId(StateID identifier) {this->id = identifier;}
         double getWeight()  {return this->weight;}
         void setWeight(double w) {this->weight = w;}
         int getGreal() const {return this->g_real;}
         void setGreal(int g) {this->g_real = g;}
+	vector<int> getHC() {return this->hc;}
+	void setHC(vector<int> hc1) {this->hc = hc1;}
 };
 
 class SSSearch : public SearchEngine {
@@ -59,9 +62,8 @@ private:
 	int maxlevels; //maximum number of levels expanded with no progress before switching to a more refined type system
 	int timelimit; //time limit to solve the problem in seconds
 
-	std::map<int, SSNode> open;
 	map<Type, SSNode> queue;
-        map<Type, double> S; 
+ 
         vector<double> vweight;
         std::map<Node, double> expanded;
 
@@ -108,6 +110,7 @@ public:
         double getProbingResult();
         void probe();
         void predict(int probes);
+	int getMinHeur(vector<int> v);
 };
 
 #endif /*MRW_H_*/

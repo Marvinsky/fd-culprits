@@ -1,86 +1,94 @@
-#include "type.h"
-#include <algorithm>
-
-#include <vector>
 #include <iostream>
 
-using namespace std;
+#include "type.h"
 
-Type::Type() {
-        std::vector<int> aux (0, 0);
-	this->hcs = aux;
-        this->level = -1;
+using namespace::std;
+
+Type::Type()
+{
+	this->p      = -1;
+	this->h      = -1;
+	this->label  = -1;
+	this->random = -1;
+	this->best_h = -1;
 }
 
-Type::Type(const std::vector<int> &hcs1, int l) {
-	this->hcs = hcs1;
-        this->level = l;
+Type::Type(long parent, int heuristic)
+{
+	this->p      = parent;
+	this->h      = heuristic;
+	this->label  = -1;
+	this->random = -1;
+	this->best_h = -1;
 }
 
-std::vector<int> const &Type::getHC() const {
-	return this->hcs;
+void Type::print() const
+{
+	cout << level << " " << p << " " << h << " " << endl;
+	this->children.print();
 }
 
-void Type::setHC(const std::vector<int> &hcs1) {
-	this->hcs = hcs1;
-}
 
-int Type::getLevel() const {
-	return this->level;
-}
+bool operator< (const Type& o1, const Type& o2)
+{
+     // node level is implicit in node class ("p" below)
 
-void Type::setLevel(int l) {
-	this->level = l;
-}
-
-void Type::print() const {
-        cout<<"\tPrint vector: ";
-	for (size_t i = 0; i < this->hcs.size(); i++) {
-		int h_value = this->hcs.at(i);
-		cout<<h_value;
-		if (i != hcs.size() -1) {
-			cout<<"/";
-		}
+	if(o1.level != o2.level)
+	{
+		return o1.level < o2.level;
 	}
-	cout<<"\n";
-}
 
-bool compareTwoVectors(vector<int> v1, vector<int> v2) {
-        bool allEquals = true;
-        if (v1.size() == v2.size()) {
-                for (size_t i = 0; i < v1.size(); i++) {
-                        if (v1.at(i) != v2.at(i)) {
-                            allEquals = false;
-                        }
-                }
-        } else {
-                allEquals = false;
-        }
-        return allEquals;
-}
+	if(o1.best_h != o2.best_h)
+	{
+		return o1.best_h < o2.best_h;  // lower index first
+	}
 
-bool operator< (const Type& o1, const Type& o2) {
+	if(o1.p != o2.p)
+	{
+		return o1.p < o2.p;  // lower index first
+	}
 
-        if (o1.hcs != o2.hcs) {
-           cout<<"type.cc:54"<<endl;
-           return o1.hcs < o2.hcs;
-        }
+	if(o1.h != o2.h)
+	{
+		cout<<"o1.h != o2.h"<<endl;
+		return o1.h < o2.h;  // higher heuristic values first
+	}
 
-        if (o1.level != o2.level) {
-           return o1.level < o2.level;
-        }
-	
-        return false;
+	return false; //o1.children < o2.children;
 }
 
 Type& Type::operator=(const Type &rhs) {
-        this->hcs = rhs.hcs;
 	this->level = rhs.level;
+	this->best_h = rhs.best_h;
+	this->p = rhs.p;
+	this->h = rhs.h;
 	return *this;
 }
 
 bool Type::operator==(const Type &rhs) const {
-	if (this->hcs != rhs.hcs) return false;
 	if (this->level != rhs.level) return false;
-	return true;
+	if (this->best_h != rhs.best_h) return false;
+	if (this->p != rhs.p) return false;
+	if (this->h != rhs.h) return false;
+	return true;	
 }
+
+/*
+bool Type::operator<(const Type &rhs) const {
+	if (this->level == rhs.level && this->best_h == rhs.best_h && this->p == rhs.p && this->h == rhs.h) {
+		return true;
+	}
+	if (this->level == rhs.level && this->best_h == rhs.best_h && this->p == rhs.p) {
+		return true;
+	}
+	if (this->level == rhs.level && this->best_h == rhs.best_h) {
+		return true;
+	}
+	if (this->level == rhs.level) {
+		return true;
+	}
+	return false;
+}
+*/
+
+int Type::lookahead = 0;
