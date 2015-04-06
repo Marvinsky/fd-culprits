@@ -365,9 +365,6 @@ void SSSearch::probe()
                       	       }
                            }
                            cout<<", level = "<<level + 1<<"\n";
-
-                           queue.insert( pair<Type, SSNode>( object, child_node ) );
-
                            
                            map<Type, SSNode>::iterator queueIt = queue.find( object );
 			   if( queueIt != queue.end() )
