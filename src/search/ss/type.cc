@@ -50,7 +50,6 @@ bool operator< (const Type& o1, const Type& o2)
 
 	if(o1.h != o2.h)
 	{
-		cout<<"o1.h != o2.h"<<endl;
 		return o1.h < o2.h;  // higher heuristic values first
 	}
 
