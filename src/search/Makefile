@@ -158,6 +158,9 @@ HEADERS += pdbs/canonical_pdbs_heuristic.h \
            pdbs/util.h \
            pdbs/zero_one_pdbs_heuristic.h \
 
+
+HEADERS += ida/ida_search.h \
+
 HEADERS += ss/type_child.h \
            ss/type_children.h \
            ss/type.h \
