@@ -84,9 +84,13 @@ void SSSearch::probe()
         }
 
 	initial_value = min_h;
-
-        //for the open domains the heuristic is set to six
-        threshold = 2*initial_value;
+        cout<<"f_boundary = "<<f_boundary<<endl;
+        if (f_boundary) {
+	   threshold = f_boundary;
+	} else {
+	   threshold = 2*initial_value;
+	}
+        cout<<"threshold = "<<threshold<<endl;
 
         const GlobalState &initial_state = g_initial_state();
         vector<int> h_initial_v;
