@@ -18,6 +18,11 @@ ZeroOnePDBsHeuristic::ZeroOnePDBsHeuristic(
     const Options &opts,
     const vector<int> &op_costs)
     : Heuristic(opts) {
+    gapdb_heur_TPN=0.00000011;
+    bool temp(opts.get<bool>("disjoint"));disjoint_patterns=temp;
+    double temp2(opts.get<double>("mp"));mutation_rate=temp2;
+    bool temp3(opts.get<bool>("complementary"));complementary=temp3;
+    int temp4(opts.get<int>("size"));pdb_max_size=temp4;
     vector<int> operator_costs;
     if (op_costs.empty()) { // if no operator costs are specified, use default operator costs
         operator_costs.reserve(g_operators.size());

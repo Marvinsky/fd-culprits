@@ -21,6 +21,7 @@
 #include <fstream>
 #include <iostream>
 #include <iomanip>
+#include <sstream>
 
 using namespace __gnu_cxx;
 using namespace std;
@@ -55,8 +56,8 @@ PatternGenerationEdelkamp::PatternGenerationEdelkamp(const Options &opts)
 	if(no_more_pdb_gen_print==true){
 	  cout<<"no more PDB generation, overall time("<<g_timer<<")>pdb_gen_time_limit("<<pdb_gen_time_limit<<")"<<endl;
 	  no_more_pdb_gen_print=false;
-
 	}
+	best_heuristic->set_stop_using(true);
 	no_more_ga_pdbs=true;
 	return;
       }
@@ -179,7 +180,7 @@ void PatternGenerationEdelkamp::dump_file() const {
 		   cout<<"domain directory already exists."<<endl;
 		}
 
-		string system_call = "/bin/dat/"+domain_name+"/rm ";
+		string system_call = "/bin/rm dat/"+domain_name+"/";
                 string task2 = problem_name2;
                 size_t found2 = task2.find(".");
                 string task2_final = task2.substr(0, found2);
@@ -188,7 +189,7 @@ void PatternGenerationEdelkamp::dump_file() const {
 		cout<<"First call, removing system_call to avoid duplicate pdbs:"<<system_call<<endl;
 
 		int temp = system(system_call.c_str());
-		cout<<"grep status:"<<temp<<endl;
+		cout<<"rm status:"<<temp<<endl;
 		if (temp == 0) {
 			
 		}
@@ -356,14 +357,14 @@ void PatternGenerationEdelkamp::evaluate(vector<double> &fitness_values) {
             transform_to_pattern_normal_form(bitvector, pattern);
 
             if (is_pattern_too_large(pattern)) {
-                cout << "pattern " << j << " exceeds the memory limit!" << endl;
+                //cout << "pattern " << j << " exceeds the memory limit!" << endl;
                 pattern_valid = false;
                 break;
             }
 
             if (disjoint_patterns) {
                 if (mark_used_variables(pattern, variables_used)) {
-                    cout << "patterns are not disjoint anymore!" << endl;
+                    //cout << "patterns are not disjoint anymore!" << endl;
                     pattern_valid = false;
                     break;
                 }
@@ -387,6 +388,9 @@ void PatternGenerationEdelkamp::evaluate(vector<double> &fitness_values) {
             opts.set<int>("cost_type", cost_type);
             opts.set<bool>("disjoint", disjoint_patterns);
             opts.set<vector<vector<int> > >("patterns", pattern_collection);
+	    opts.set<double>("mp", mutation_probability);
+	    opts.set<bool>("complementary", complementary);
+	    opts.set<int>("size", pdb_max_size);
             ZeroOnePDBsHeuristic *zoppch =
                 new ZeroOnePDBsHeuristic(opts);
             fitness = zoppch->get_approx_mean_finite_h();
@@ -469,8 +473,9 @@ void PatternGenerationEdelkamp::genetic_algorithm() {
 	  //cout<<"breaking-3 out of GA Algortihm, current gen time:"<<timer()<<" bigger than time_limit:"<<time_limit<<endl;
 	  timer.stop();
 	  break;
-        cout << endl;
-        cout << "--------- episode no " << (i + 1) << " ---------" << endl;
+        }
+        //cout << endl;
+        //cout << "--------- episode no " << (i + 1) << " ---------" << endl;
         mutate();
         //cout << "current pattern_collections after mutation" << endl;
         //dump();
@@ -484,7 +489,6 @@ void PatternGenerationEdelkamp::genetic_algorithm() {
         select(fitness_values); // we allow to select invalid pattern collections
         //cout << "current pattern collections (after selection):" << endl;
         //dump();
-        }
     timer.stop();//no need to keep this one ticking after pattern generation finished!
     }
 }

@@ -15,6 +15,7 @@ Heuristic::Heuristic(const Options &opts)
     : task(opts.get<TaskProxy *>("task")),
       cost_type(OperatorCost(opts.get_enum("cost_type"))) {
     heuristic = NOT_INITIALIZED;
+    stop_using=false; //cout<<get_heur_name()<<",initial stop_using=false"<<endl;
 }
 
 Heuristic::~Heuristic() {

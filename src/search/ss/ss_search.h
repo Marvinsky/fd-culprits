@@ -32,7 +32,7 @@ private:
 	StateID id;
 	double weight;
         int g_real;
-	vector<int> hc;
+	int h;
 public:
         SSNode(): id(StateID::no_state), weight(0.0), g_real(0) {}
         SSNode(StateID identifier, double w, int g) : id(identifier), weight(w), g_real(g){}
@@ -42,8 +42,8 @@ public:
         void setWeight(double w) {this->weight = w;}
         int getGreal() const {return this->g_real;}
         void setGreal(int g) {this->g_real = g;}
-	vector<int> getHC() {return this->hc;}
-	void setHC(vector<int> hc1) {this->hc = hc1;}
+	int getH() {return this->h;}
+	void setH(int H) {this->h = H;}
 };
 
 class SSSearch : public SearchEngine { 

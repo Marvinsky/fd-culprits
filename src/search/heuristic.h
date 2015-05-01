@@ -49,6 +49,7 @@ public:
     virtual int compute_heuristic(const GlobalState &state) = 0;
 
     void set_stop_using(bool status);
+    bool is_using(){return !stop_using;};
     void evaluate(const GlobalState &state);
     bool is_dead_end() const;
     int get_heuristic();
