@@ -247,7 +247,7 @@ SearchEngine *OptionParser::parse_cmd_line_aux(
 	      cout<<"new arg after erase:"<<arg2<<endl;
 	      //first allocate all the availabe mp probs to a vector to ensure no repetion of random probabilities
 	      vector<string> mp_probs;
-	      double heurs_to_generate=1000;
+	      double heurs_to_generate=50000;
 	        for(int j=0;j<int(heurs_to_generate);j++){
 		  std::stringstream str;
 		  str << fixed << setprecision(7) <<double(j+1)/heurs_to_generate;

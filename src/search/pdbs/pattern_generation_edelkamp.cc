@@ -57,7 +57,7 @@ PatternGenerationEdelkamp::PatternGenerationEdelkamp(const Options &opts)
 	  cout<<"no more PDB generation, overall time("<<g_timer<<")>pdb_gen_time_limit("<<pdb_gen_time_limit<<")"<<endl;
 	  no_more_pdb_gen_print=false;
 	}
-	best_heuristic->set_stop_using(true);
+	//best_heuristic->set_stop_using(true);
 	no_more_ga_pdbs=true;
 	return;
       }

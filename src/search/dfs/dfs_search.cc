@@ -122,7 +122,8 @@ SearchStatus DFSSearch::step() {
         StateID initial_state_id = initial_state.get_id();
         SSNode node(initial_state_id, h_initial, 0, 0);//Setting the max initial heuristic value, the g_real and the level
     
-        depth = 2*h_initial;
+        //depth = 2*h_initial;
+        depth = 16;
 	cout<<"depth ="<<depth<<endl;
         queue.push(node);
         double count_nodes = 0.0;
