@@ -69,6 +69,7 @@ public:
 
     //ss+culprits
     virtual string get_heur_name() {string temp = "No Name"; return temp;}
+    virtual string get_heur_call_name(){string temp = "No Name"; return temp;}
     
 
 

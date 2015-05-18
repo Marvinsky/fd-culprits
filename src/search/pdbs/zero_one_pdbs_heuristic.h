@@ -39,6 +39,16 @@ public:
       temp+=",size=";
       std::ostringstream ss2;ss2 <<pdb_max_size;temp+=ss2.str();
       if(disjoint_patterns){temp+=",with disjoint patterns";}else{temp+=",without disjoint patterns";};return temp;}
+virtual string get_heur_call_name() {
+  string temp="gapdb(mp=";
+  std::ostringstream ss;ss << std::fixed << std::setprecision(7);ss<<mutation_rate;temp+=ss.str();
+  temp+=",size=";
+  std::ostringstream ss2;ss2 <<pdb_max_size;temp+=ss2.str();
+  temp+=",eps=30,colls=5";
+  if(complementary){temp+=",complementary=true";}if(disjoint_patterns){temp+=",disjoint=true)";}else{temp+=")";}
+  return temp;
+}
+
 };
 
 #endif

@@ -99,6 +99,7 @@ PatternGenerationEdelkamp::PatternGenerationEdelkamp(const Options &opts)
 //	pattern_collection.push_back(v7);
 //	pattern_collection.push_back(v8);
 
+	//if(!get_All_GA_patterns_from_file(pattern_collection))
 	if(!get_GA_patterns_from_file(pattern_collection,disjoint_patterns,mutation_probability,pdb_max_size)){
 	  //cout<<"Cant find at least one previous GA, so returning dummy heuristic from now on"<<endl;
 	  no_more_ga_pdbs=true;
@@ -209,7 +210,7 @@ void PatternGenerationEdelkamp::dump_file() const {
         cout<<"file_name: "<<file_name<<endl;
 
 	outputFile.open(file_name.c_str(), ios::app);
-	problem_name = g_plan_filename;
+	problem_name = problem_name2;
 	outputFile<<problem_name<<":";
 	outputFile<<"returning best heuristic(GAPDB)[,"<<i<<",]:";
 	i++;

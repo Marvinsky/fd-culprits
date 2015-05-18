@@ -62,7 +62,7 @@ SearchStatus SSSearch::step() {
   bool at_least_one_dominated=false;
   vector<int> demotted_heurs;
   int original_threshold=f_boundary;
-  while(search_time()<60.0){
+  while(search_time()<140.0){
 	this->RanGen2 = new CRandomMersenne(1);
         	
 	//clear all data from previous iteration
@@ -71,7 +71,6 @@ SearchStatus SSSearch::step() {
 	  collector.clear();
 	  cout<<"Cleared F_culprits&b_culprits"<<endl;F_culprits.clear();
 	}
-	
         predict(ss_probes);
 	threshold=next_f_bound;
 	f_boundary=next_f_bound;
@@ -186,8 +185,12 @@ SearchStatus SSSearch::step() {
 	    cout<<"Finished running domination check, no more heuristics are dominated"<<endl;
 	    break;
 	  }
+	  if(search_time()-start_time_dom_check>60.0){
+	    cout<<"Domination check limited to 60 secs, need to improve to enable full check!"<<endl;
+	    break;
+	  }
+	  
 	}
-	  cout<<"Finished checking for dominated_heuristics, heuristics left:"<<heuristics.size()-demotted_heurs.size()<<",demotted_heurs:"<<demotted_heurs.size()<<endl;
 	  cout<<"Cleared F_culprits"<<endl;F_culprits.clear();
 	  vector<Heuristic *> temp_heuristics;
 	  for(size_t i=0;i<heuristics.size();i++){
@@ -195,17 +198,46 @@ SearchStatus SSSearch::step() {
 	      temp_heuristics.push_back(heuristics[i]);
 	    }
 	  }
+	  cout<<"Finished checking for dominated_heuristics, heuristics left:"<<heuristics.size()<<",demotted_heurs:"<<demotted_heurs.size()<<",search_time:"<<search_time()<<endl;
 	  //update list of heuristics to the remaining ones
 	  cout<<"NEED TO FREE MEMORY OF UNUSED HEURISTICS!!!"<<endl;
 	  heuristics=temp_heuristics;
 	  cout<<"domination checks finished, time:"<<search_time()<<endl;
 	  cout<<"domination checks overall time:"<<search_time()-start_time_dom_check<<endl;
+	  cout<<"setting threshold back to "<<original_threshold<<endl;
+	  threshold=original_threshold;f_boundary=threshold;
+	  if(heuristics.size()>1000){
+	    ss_probes=20;
+	  }
+	  else if(heuristics.size()>500){
+	    ss_probes=50;
+	  }
+	  else if(heuristics.size()>250){
+	    ss_probes=100;
+	  }
+	  else if(heuristics.size()>100){
+	    ss_probes=250;
+	  }
+	  else{
+	    ss_probes=500;
+	  }
+	  cout<<"setting probes to "<<ss_probes<<endl;
       }
-	cout<<"setting threshold back to "<<original_threshold<<endl;
-	threshold=original_threshold;f_boundary=threshold;
-	ss_probes=1000;
-	cout<<"setting probes to "<<ss_probes<<endl;
+      if(!domination_check){
+	boost::dynamic_bitset<> b_zeros(heuristics.size());b_zeros.reset();
+	if(collector.find(b_zeros)!=collector.end()){
+	    if(collector[b_zeros]>1000000000){
+	      cout<<"minimum expanded nodes==1,000,000,000,stopping sampling"<<endl;
+	      break;
+	    }
+	    else{
+	      cout<<"collector["<<b_zeros<<"]:"<<collector[b_zeros]<<endl;
+	    }
+	}
+      }
   }
+  cout<<"selecting best heuristc after,"<<search_time()<<", seconds"<<endl;
+  select_best_heuristics_greedy();
         return SOLVED;
 }
 
@@ -214,7 +246,7 @@ void SSSearch::predict(int probes) {
         cout<<"#probes : "<<probes<<",g_timer:"<<g_timer()<<endl;
 	cout<<"input heuristics:"<<heuristics.size()<<endl;
         for (int i = 0; i < probes; i++) {
-	  if(search_time()>60.0){
+	  if(search_time()>300.0){
 	    cout<<"Search_timer past maximum sampling_time"<<endl;
 	    return;
 	  }
@@ -805,10 +837,6 @@ void SSSearch::generateSSCCReport() {
                 output<<")cc="<<(double)cc/(double)ss_probes<<"\n";
 	}
         output.close();
-	if(!domination_check){
-	  collector.clear();
-	  cout<<"Cleared F_culprits&b_culprits"<<endl;F_culprits.clear();
-	}
 }
 
 double SSSearch::getProbingResult() {
@@ -833,7 +861,194 @@ void SSSearch::printQueue() {
         cout<<"\nEnd PrintQueue\n";
 }
 
+void SSSearch::select_best_heuristics_greedy(){
+  //h_comb_current_time.clear();
+  vector<Heuristic *> selected_heuristics;
+  cout<<"Starting select_best_h_combs_RIDA_Sampling_Greedy,bcs:"<<collector.size()<<endl;
+  
+  //double best_current_time=0;
+  //long best_initial_nodes=0;
+  boost::dynamic_bitset<> current_h_comb(heuristics.size());
+  boost::dynamic_bitset<> best_h_comb(heuristics.size());
+  //double last_best_h_comb_time=0;
+  
+  //First Greedy selection
+  Timer progressive_greedy_timer;
+  best_h_comb.reset();
 
+
+  //Timer calculate_heur_timer;
+  vector<int> active_heurs;
+  vector<int> candidate_heurs;
+  static set<int> skip_heurs;
+  bool delete_counter;
+    
+  cout<<"finding greedily best h_comb, starting degree:"<<best_h_comb.count()<<endl;
+  double best_comb_nodes=DBL_MAX;
+  cout<<"starting best_comb_nodes="<<best_comb_nodes<<endl;
+  
+
+  if(best_h_comb.count()==0){
+    vector<double> initial_heur_sizes(heuristics.size(),0);
+    for (map<boost::dynamic_bitset<>,double>::const_iterator it_h_values= collector.begin(); it_h_values != collector.end();it_h_values++){
+      for(size_t heur=0;heur<heuristics.size();heur++){
+	//cout<<"it_h_values:"<<it_h_values->first<<endl;
+	if(it_h_values->first.test(heur)){//if indiv heuristic is active and culling the counter then this counter does not apply to the h_comb
+	  initial_heur_sizes[heur]+=it_h_values->second;
+	  //cout<<"added "<<it_h_values->second<<" to initial_heur_"<<heur<<endl;
+	}
+	else{
+	  //cout<<"skipped added "<<it_h_values->second<<" to initial_heur_sizeds of "<<heur<<endl;
+
+	}
+      }
+    }
+    //Now calculate which one was best
+    std::cout << "scientific:\n" << std::scientific;
+    for(size_t heur=0;heur<heuristics.size();heur++){
+      cout<<"initial_heur_sizes("<<heur<<"):"<<initial_heur_sizes.at(heur)<<endl;
+      if(initial_heur_sizes.at(heur)<best_comb_nodes){
+	best_comb_nodes=initial_heur_sizes.at(heur);
+	best_h_comb.resize(heuristics.size());best_h_comb.reset();best_h_comb.set(heur);
+	cout<<"temp best_comb_nodes:"<<best_comb_nodes<<",temp best heur:";print_h_comb(best_h_comb);cout<<endl;
+    }
+  }
+  }
+  
+
+  while(true){
+    cout<<"prev best_h_comb:";print_h_comb(best_h_comb);cout<<",nodes:"<<best_comb_nodes<<endl;
+
+    active_heurs.clear();
+    candidate_heurs.clear();
+    for(unsigned i=0;i<best_h_comb.size();i++){
+      if(best_h_comb.test(i)){
+	active_heurs.push_back(i);
+      }
+      else if(skip_heurs.find(i)==skip_heurs.end()){
+	candidate_heurs.push_back(i);
+      }
+    }
+    cout<<"active_heurs"<<active_heurs<<endl;
+    cout<<"candidate_heurs:"<<candidate_heurs<<endl;
+
+    vector<double> h_comb_prunning_nodes(heuristics.size(),0);
+    for (map<boost::dynamic_bitset<>,double>::iterator it_h_values= collector.begin(); it_h_values != collector.end();){
+      delete_counter=false;
+      for(size_t heur=0;heur<active_heurs.size();heur++){
+	if(!it_h_values->first.test(active_heurs[heur])){//if indiv heuristic is active and culling the counter then this counter does not apply to the h_comb
+	  delete_counter=true;
+	  //cout<<"Erasing "<<it_h_values->first<<endl;
+	  collector.erase(it_h_values++);//removing CC, this CC is already culled by previous best candidate set
+	  break;
+	}
+      }
+      if(delete_counter){
+	continue;
+      }
+      //So this counter is not being culled by any of the preselected heuristics, lets keep track of the heuristics which would prune it
+
+
+      for(size_t heur=0;heur<candidate_heurs.size();heur++){
+	if(!it_h_values->first.test(candidate_heurs[heur])){//if indiv heuristic is active and culling the counter then this counter shows heur actually prunning extra nodes
+	  //cout<<"\t working on counter:"<<it_h_values->first<<",prunning heur:"<<heur<<",adding:"<<it_h_values->second<<endl;
+	  h_comb_prunning_nodes[candidate_heurs[heur]]+=it_h_values->second;
+	}
+      }
+      ++it_h_values;
+    }
+      //now check which heur is best to add to h_comb and wether any of the remaining h_combs can reduce the size of the prev best combinaiton
+      double highest_prunner=0;
+      int best_candidate=0;
+      for(size_t i=0;i<candidate_heurs.size();i++){
+	if(h_comb_prunning_nodes.at(candidate_heurs[i])==0){
+	  //cout<<"skipping h("<<i<<"), it can not add further prunning"<<endl;fflush(stdout);
+	  skip_heurs.insert(candidate_heurs[i]);
+	}
+	else if(h_comb_prunning_nodes.at(candidate_heurs[i])>highest_prunner){
+	  highest_prunner=h_comb_prunning_nodes.at(candidate_heurs[i]);
+	  best_candidate=candidate_heurs[i];
+	}
+      }
+      if(highest_prunner==0){
+	cout<<"no possible improvements node-wise"<<endl;
+	  break;
+      }
+      else{
+	best_h_comb.set(best_candidate);
+	best_comb_nodes-=highest_prunner;
+	cout<<"best_h_comb:";print_h_comb(best_h_comb);cout<<",nodes:"<<best_comb_nodes<<",extra pruned:"<<highest_prunner<<endl;
+      }
+  }
+  /*if(prev_F_boundaries.size()>1){
+    double F_step=prev_F_boundaries.back()-prev_F_boundaries.at(prev_F_boundaries.size()-2);
+    double current_F_boundary;
+    double best_h_comb_HBF=double(best_comb_nodes)/double(prev_nodes);
+    cout<<"prev_nodes:"<<prev_nodes<<"F_step:"<<F_step<<",current_F_boundary:"<<prev_F_boundaries.back()<<",best_h_comb HBF:"<<best_h_comb_HBF;
+      
+    //double next_nodes=best_comb_nodes;
+    ofstream Predictions_file;
+    string Predictions_filename="Preds_";
+    Predictions_filename+=g_plan_filename;
+    Predictions_filename+=".txt";
+    Predictions_file.open (Predictions_filename.c_str());
+    for(int i=0;i<100;i++){
+      current_F_boundary=prev_F_boundaries.back()+i*F_step;
+      cout<<"F_boundary:,"<<current_F_boundary<<",size:,"<<best_comb_nodes*pow(best_h_comb_HBF,i)<<endl;
+      Predictions_file<<std::fixed;
+      Predictions_file<<std::setprecision(0);
+      Predictions_file<<"Predictions,F_boundary:,"<<current_F_boundary<<",size:,"<<best_comb_nodes*pow(best_h_comb_HBF,i)<<endl;
+    }
+    Predictions_file.close();
+  }
+  else{
+    cout<<"only one common F_boundary, so no HBF predictions for future F_boundaries"<<endl;
+  }*/
+
+  cout<<"progressive_greedy_timer:,"<<progressive_greedy_timer<<",level:,"<<best_h_comb.count()<<",Final Overall best h_comb(translated):";print_h_comb(best_h_comb);
+  for(size_t j=0;j<best_h_comb.size();j++){
+    if(best_h_comb.test(j)){
+      cout<<heuristics[j]->get_heur_call_name()<<endl;
+      //selected_heuristics.push_back(selectable_heuristics.at(j));
+    }
+  }
+        
+  ofstream output;
+  string output_file="temp_scripts/selected_heurs_";
+  output_file+=problem_name2;
+  output_file+=".sh";
+  output.open(output_file.c_str());
+  output<<"./downward-release --use_saved_pdbs --domain_name "<<domain_name<<" --problem_name "<<problem_name2<<" --search \"astar(";
+  size_t populated_counter=0;
+  output<<"min([";
+  for(size_t j=0;j<best_h_comb.size();j++){
+    if(best_h_comb.test(j)){
+      output<<heuristics[j]->get_heur_call_name();
+      if(populated_counter<(best_h_comb.count()-1)){
+	output<<",";
+	//cout<<"j:"<<j<<"best_h_comb.count:"<<best_h_comb.count()<<", printing comma"<<endl;
+      }
+      else{
+	//cout<<"j:"<<j<<",best_h_comb.size:"<<best_h_comb.count()<<", not printing comma"<<endl;
+      }
+      populated_counter++;
+    }
+  }
+  output<<"]))\" ";
+  output.close();
+
+  /*
+  best_current_time=double(best_current_nodes)*calculate_time_costs_specific(best_h_comb,selectable_heuristics);
+  cout<<",nodes:,"<<best_current_nodes<<",best_current_time:,"<<best_current_time<<endl;*/
+
+ cout<<"Memory before deleting states:";
+ get_peak_memory_in_kb(true);
+ delete g_state_registry;
+ g_state_registry = new StateRegistry;
+ cout<<"Memory after deleting states:";
+ get_peak_memory_in_kb(true);
+ exit(0);
+}
 
 
 void SSSearch::initialize() {
@@ -846,8 +1061,6 @@ void SSSearch::initialize() {
 		stored_GA_patterns.clear();
 		cout<<"cleared store_GA_patterns."<<endl;
 	}
-
-
 }
 
 static SearchEngine *_parse(OptionParser &parser) {

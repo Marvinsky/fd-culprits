@@ -96,6 +96,7 @@ public:
         void probe();
         void predict(int probes);
 	int getMinHeur(vector<int> v);
+	void select_best_heuristics_greedy();
 };
 
 #endif /*MRW_H_*/

@@ -6,16 +6,12 @@
 #include "successor_generator.h"
 #include "g_evaluator.h"
 #include "sum_evaluator.h"
+#include "max_evaluator.h"
 #include "plugin.h"
 
 #include <cassert>
 #include <cstdlib>
-#include <cstdio>
 #include <set>
-#include "limits.h"
-#include "ext/boost/dynamic_bitset.hpp"
-#include "global_state.h"
-
 using namespace std;
 
 EagerSearch::EagerSearch(
@@ -25,19 +21,23 @@ EagerSearch::EagerSearch(
       do_pathmax(opts.get<bool>("pathmax")),
       use_multi_path_dependence(opts.get<bool>("mpd")),
       open_list(opts.get<OpenList<StateID> *>("open")) {
-    if (opts.contains("f_eval")) {
+	f_evaluator = opts.get<ScalarEvaluator *>("f_eval");
+    /*if (opts.contains("f_eval")) {
         f_evaluator = opts.get<ScalarEvaluator *>("f_eval");
     } else {
         f_evaluator = 0;
-    }
+    }*/
     if (opts.contains("preferred")) {
         preferred_operator_heuristics =
             opts.get_list<Heuristic *>("preferred");
-    } 
+    }
 }
 
 void EagerSearch::initialize() {
-srand(1);
+    if(use_saved_pdbs){
+      stored_GA_patterns.clear();
+      cout<<"cleared stored_GA_patterns"<<endl;
+    }
     //TODO children classes should output which kind of search
     cout << "Conducting best first search"
          << (reopen_closed_nodes ? " with" : " without")
@@ -51,11 +51,17 @@ srand(1);
 
     set<Heuristic *> hset;
     open_list->get_involved_heuristics(hset);
-
-    for (set<Heuristic *>::iterator it = hset.begin(); it != hset.end(); ++it) {
+	
+    for (set<Heuristic *>::iterator it = hset.begin(); it != hset.end(); it++) {
+	  //Eliminate any heuristics which were not generated because we ran out of time
+	  //currently this is hacked to return not using heuristics
+      if((*it)->is_using()){
+	heuristics.push_back(*it);
         estimate_heuristics.push_back(*it);
         search_progress.add_heuristic(*it);
+      }
     }
+    cout<<"initial heuristics size:"<<heuristics.size()<<endl;
 
     // add heuristics that are used for preferred operators (in case they are
     // not also used in the open list)
@@ -68,34 +74,66 @@ srand(1);
     if (f_evaluator) {
         f_evaluator->get_involved_heuristics(hset);
     }
-
-    for (set<Heuristic *>::iterator it = hset.begin(); it != hset.end(); ++it) {
-        heuristics.push_back(*it);
+    else{
+      cout<<"f_evaluator is false"<<endl;
+      exit(0);
     }
-    sampler = new TypeSystem2(heuristics);
-
-    assert(!heuristics.empty());
 
     const GlobalState &initial_state = g_initial_state();
-    int min_h=INT_MAX/2;
-    cout<<"77: heuristics.size() = "<<heuristics.size()<<endl;
-    for (size_t i = 0; i < heuristics.size(); ++i){
-        heuristics[i]->evaluate(initial_state);
-        cout<<i<<" = "<<heuristics[i]->get_heuristic()<<endl;
-	min_h=min(min_h,heuristics[i]->get_heuristic());
+    cout<<"# heuristics before eliminating those not supporting conditional effects:"<<heuristics.size()<<endl;
+
+    orig_heuristics=heuristics;
+    //remove any heuristics which have been set to stop_using
+    heuristics.clear();
+    for (size_t i = 0; i < orig_heuristics.size(); i++){
+	    if(!heuristics[i]->is_using()){
+	      //cout<<"removing heur";heuristics[i]->print_heur_name();cout<<endl;
+	      //heuristics[i]->free_up_memory(search_space);
+	      //string heur_name=heuristics[i]->get_heur_name();
+	      //if(heur_name.substr(0,13)=="heur:,lp_pdb,"){
+		//exit(0);
+	      //}
+	      continue;
+	    }
+	    else{
+	      heuristics[i]->evaluate(initial_state);
+	      heuristics.push_back(orig_heuristics.at(i));
+	    }
     }
+    cout<<"# heuristics after eliminating those not supporting conditional effects:"<<heuristics.size()<<endl;
+    heuristics=orig_heuristics;
+    
+    assert(!heuristics.empty());
+    
+
+    cout<<"active heuristics size:"<<heuristics.size()<<endl;
+    
+    int max_h=0;
+
+    bool dead_end=false;
+    for (size_t i = 0; i < heuristics.size(); i++){
+	heuristics[i]->evaluate(initial_state);
+	dead_end=heuristics[i]->is_dead_end();
+	if(dead_end){
+	  //cout<<"dead end found"<<endl;fflush(NULL);
+	  break;
+	}
+	max_h = max(max_h,heuristics[i]->get_heuristic());
+    }
+    cout<<"Initial max_h:"<<max_h<<endl;
+    open_list->evaluate2(0, max_h);
+
     //open_list->evaluate(0, false);
-    open_list->evaluate2(0, min_h);
     search_progress.inc_evaluated_states();
     search_progress.inc_evaluations(heuristics.size());
 
-    if (open_list->is_dead_end()) {
+    if (dead_end) {
         cout << "Initial state is a dead end." << endl;
     } else {
         search_progress.get_initial_h_values();
         if (f_evaluator) {
             f_evaluator->evaluate(0, false);
-            search_progress.report_f_value(f_evaluator->get_value());
+            search_progress.report_f_value(max_h);
         }
         search_progress.check_h_progress(0);
         SearchNode node = search_space.get_node(initial_state);
@@ -103,10 +141,6 @@ srand(1);
 
         open_list->insert(initial_state.get_id());
     }
-    //cc+culprits
-    //std::random_device rd;
-    //std::mt19937 mt(rd());
-    //std::uniform_real_distribution<int> dist(1, 100); 
 }
 
 
@@ -116,405 +150,163 @@ void EagerSearch::statistics() const {
 }
 
 SearchStatus EagerSearch::step() {
-        
-	predict(ss_probes);
-        cout<<"ss_probes = "<<ss_probes<<endl;
+    pair<SearchNode, bool> n = fetch_next_node();
+    if (!n.second) {
+        return FAILED;
+    }
+    SearchNode node = n.first;
+
+    GlobalState s = node.get_state();
+    if (check_goal_and_set_plan(s))
         return SOLVED;
-}
 
-void EagerSearch::predict(int probes) {
-	totalPrediction = 0;
-	for (int i = 0; i < probes; i++) {
-		vcc.clear();
-		probe();
-                double p = getProbingResult();
-		totalPrediction = totalPrediction + (p - totalPrediction)/(i+1);
-		cout<<"*************"<<endl;
-		cout<<"p = "<<p<<endl;
-		cout<<"prePrediction_"<<i<<" = "<<totalPrediction<<endl;
-		cout<<"*************"<<endl;
+    vector<const GlobalOperator *> applicable_ops;
+    set<const GlobalOperator *> preferred_ops;
+
+    g_successor_generator->generate_applicable_ops(s, applicable_ops);
+    // This evaluates the expanded state (again) to get preferred ops
+    for (size_t i = 0; i < preferred_operator_heuristics.size(); ++i) {
+        Heuristic *h = preferred_operator_heuristics[i];
+        h->evaluate(s);
+        if (!h->is_dead_end()) {
+            // In an alternation search with unreliable heuristics, it is
+            // possible that this heuristic considers the state a dead end.
+            vector<const GlobalOperator *> preferred;
+            h->get_preferred_operators(preferred);
+            preferred_ops.insert(preferred.begin(), preferred.end());
+        }
+    }
+    search_progress.inc_evaluations(preferred_operator_heuristics.size());
+
+    for (size_t i = 0; i < applicable_ops.size(); ++i) {
+      //cout<<"op:"<<i<<"out of"<<applicable_ops.size()<<endl;fflush(stdout);
+        const GlobalOperator *op = applicable_ops[i];
+
+        if ((node.get_real_g() + op->get_cost()) >= bound)
+            continue;
+
+        GlobalState succ_state = g_state_registry->get_successor_state(s, *op);
+	//cout<<"Succ_state:";succ_state.dump_inline();fflush(NULL);
+        search_progress.inc_generated();
+        bool is_preferred = (preferred_ops.find(op) != preferred_ops.end());
+
+        SearchNode succ_node = search_space.get_node(succ_state);
+
+        // Previously encountered dead end. Don't re-evaluate.
+        if (succ_node.is_dead_end()){
+	  //cout<<"dead end found"<<endl;fflush(NULL);
+            continue;
 	}
-        cout<<"totalPrediction = "<<totalPrediction<<endl;
-	generateReport();	
-}
 
-void EagerSearch::probe() {
-        queue.clear();
-	
-        //std::random_device rd;
-        //std::mt19937 mt(rd());
-        //std::uniform_real_distribution<int> dist(1, 100);
-
-        const GlobalState &initial_state = g_initial_state();
-        vector<int> h_initial_v;
-	boost::dynamic_bitset<> b_initial_v(heuristics.size()); 
-        for (size_t i = 0; i < heuristics.size(); ++i) {
-             heuristics[i]->evaluate(initial_state);
-             h_initial_v.push_back(heuristics[i]->get_heuristic());            	
-        }
-        int max_h_initial_value = 0;
-        for (size_t i = 0; i < h_initial_v.size(); i++) {
-            int a = h_initial_v.at(i);
-            if (a > max_h_initial_value) {
-                max_h_initial_value = a;
-            }
-        }
-        threshold =  6;//2*max_h_initial_value;
-        cout<<"\tthreshold: "<<threshold<<endl;
-        cout<<"\nprint h_initial_v\n";
-	for (size_t i = 0; i < h_initial_v.size(); i++) {
-            int h_value = h_initial_v.at(i);
-            cout<<h_value;
-            if (i != h_initial_v.size() - 1) {
-               cout<<"/";
-            }
-            if (h_value <= threshold) {
-               //b_initial_v.insert(b_initial_v.begin() + i, true);
-               b_initial_v.set(i);
-            }
-        }
-        
-        cout<<"\nprint b_initial_v\n";
-        for (size_t i = 0; i< b_initial_v.size(); i++) {
-            cout<<b_initial_v.test(i);
-            if (i != b_initial_v.size() -1) {
-               cout<<"/";
-            }
-        }
-        cout<<"\n";
-        SSNode node;
-        StateID initial_state_id = initial_state.get_id();
-//cout<<"initial_state_id = "<<initial_state_id<<endl;
-node.setId(initial_state_id);
-        node.setCC(1.0);
-        //node.setBC(b_initial_v); 
-
-        Type2 type = sampler->getType(h_initial_v, 0);
-
-        queue.insert(pair<Type2, SSNode>(type, node));
-        cout<<"queue.size() = "<<queue.size()<<endl;
-        while(!queue.empty()) {
-             Type2 out = queue.begin()->first;
-             SSNode s = queue.begin()->second;
-             printNode2(out, s);
-
-             vcc.push_back(s);
-
-             int g = out.getLevel();
-             cout<<"g = "<<g<<endl;
-
-             std::map<Type2, SSNode>::iterator ret0;
-             ret0 = queue.find(out);
-             queue.erase(ret0);
-            
-
-             cout<<"inserting"<<endl;
-
- 
-             
-
-             std::vector<const GlobalOperator *> applicable_ops;
-             set<const GlobalOperator *> preferred_ops; 
-
-             GlobalState global_state = g_state_registry->lookup_state(s.getId());                
-             g_successor_generator->generate_applicable_ops(global_state, applicable_ops);
-             
-             cout<<"line 255"<<endl;
-             
-             cout<<"ops.size() = "<<applicable_ops.size()<<endl;
-             for (unsigned int i = 0; i < applicable_ops.size(); ++i) {
-                  const GlobalOperator *op = applicable_ops[i];
-                  GlobalState child =  g_state_registry->get_successor_state(global_state, *op);
-
-                  vector<int> h_child_v;
-                  boost::dynamic_bitset<> b_child_v(heuristics.size());
-                  vector<int> f_child_v;
-                  boost::dynamic_bitset<> b_f_child_v(heuristics.size());
-                  vector<string> heur_name_v;
-
-                  for (size_t i = 0; i < heuristics.size(); ++i) {
-                      heuristics[i]->evaluate(child);
-                      int new_heur = heuristics[i]->get_heuristic();
-                      string heur_name = heuristics[i]->get_heur_name();
-                      h_child_v.push_back(new_heur);
-                      f_child_v.push_back(new_heur + g + 1);
-                      heur_name_v.push_back(heur_name);
-                  }
-
-
-                  cout<<"foobar."<<endl;
-                  child.dump_inline();
-                  cout<<"foobar end"<<endl;
-                 
-                  cout<<"h = "<<heuristics[0]->get_heuristic()<<", f = "<<heuristics[0]->get_heuristic() + g + get_adjusted_cost(*op)<<endl;
-                  
-                  cout<<"*******************Child #"<<i<<"********************"<<endl;
-                  //working with h-value
-                  cout<<"\nprint h_child_v\n";
-                  cout<<"g = "<<g + 1<<endl;
-                  for (size_t i = 0; i < heur_name_v.size(); i++) {
-                      cout<<heur_name_v.at(i);
-                      if (i != heur_name_v.size() - 1) {
-                         cout<<"/";
-                      }
-                  }
-                  heur_name_v.clear();
-                  cout<<"\n"; 
-                  for (size_t i = 0; i < h_child_v.size(); i++) {
-                      int h_value = h_child_v.at(i);
-                      cout<<h_value;
-                      if (i != h_child_v.size() -1) {
-                         cout<<"/";
-                      }
-                      if (h_value + g + get_adjusted_cost(*op)  <= threshold) {
-                          //b_child_v.insert(b_child_v.begin() + i, true);
-                          b_child_v.set(i);
-                      }
-                  }
-             
-	     std::vector<const GlobalOperator *> applicable_ops_2;
-             
-
-             GlobalState global_state_2 = g_state_registry->lookup_state(child.get_id());                
-             g_successor_generator->generate_applicable_ops(global_state_2, applicable_ops_2);
-             
-             int amount = applicable_ops_2.size();
-                
-             std::pair<std::map<boost::dynamic_bitset<>, double>::iterator, bool> ret2;
-          
-             std::map<boost::dynamic_bitset<>, double>::iterator it2; 
-      
-
-             if (b_child_v.count() > 0) {
-
-              
- 	     ret2 = collector.insert(std::pair<boost::dynamic_bitset<>, double>(b_child_v, amount));
-             it2 = ret2.first;
-
-             if (ret2.second) {
-		cout<<"raiz bc new is added"<<endl;
-
+        // update new path
+        if (use_multi_path_dependence || succ_node.is_new()) {
+            bool h_is_dirty = false;
+            for (size_t j = 0; j < heuristics.size(); ++j) {
                 /*
-                vector<bool> aux = it2->first;
-                cout<<"\tbc : ";
-                for (size_t i= 0; i < aux.size(); i++) {
-		    cout<<aux.at(i);
-                    if (i != aux.size() - 1) {
-		       cout<<"/";
-                    }
-                }
-                cout<<", cc : "<<it2->second<<"\n";
-
+                  Note that we can't break out of the loop when
+                  h_is_dirty is set to true or use short-circuit
+                  evaluation here. We must call reach_state for each
+                  heuristic for its side effects.
                 */
-             } else {
-                cout<<"raiz bc old is being updated"<<endl;
-                /*
-                vector<bool> aux = it2->first;
-                cout<<"\tbc duplicate: ";
-                for (size_t i= 0; i < aux.size(); i++) {
-		    cout<<aux.at(i);
-                    if (i != aux.size() - 1) {
-		       cout<<"/";
-                    }
-                }
-                cout<<", cc : "<<it2->second;
-                */
-                it2->second += amount;
-                cout<<", newcc : "<<it2->second<<"\n";
-               
-             }
-             }
-
-     
-                  cout<<"\nprint b_child_v\n";
-                  for (size_t i = 0; i< b_child_v.size(); i++) {
-                       cout<<b_child_v.test(i);
-                       if (i != b_child_v.size() -1) {
-                          cout<<"/";                         
-                       }
-                  }
-                 
-                  // working with f-value
-                  cout<<"\nprint f_child_v\n";                   
-                  for (size_t i = 0; i < f_child_v.size(); i++) {
-                      int f_value = f_child_v.at(i);
-                      cout<<f_value;
-                      if (i != f_child_v.size() -1) {
-                         cout<<"/";
-                      }
-                      if (f_value <= threshold) {
-                          //b_f_child_v.insert(b_f_child_v.begin() + i, true);
-                          b_f_child_v.set(i);
-                      } 
-                  }
-                   
-                  cout<<"\nprint f_b_child_v\n";
-                  for (size_t i = 0; i < b_f_child_v.size(); i++) {
-			cout<<b_f_child_v.test(i);
-                        if (i != b_f_child_v.size() -1) {
-                           cout<<"/";
-                        }
-                  }
- 
- 
-                  cout<<"\nLet see if we can prune with f-value less or equal than the f-value!"<<endl;    
-                  if (b_child_v.count() > 0)  {
-                     cout<<"\nSome or all of them are true"<<endl;
-
-		     Type2 object = sampler->getType(h_child_v, g+1);
-                   
-                     SSNode child_node;
-                     StateID child_state_id = child.get_id();
-                     
-                     child_node.setId(child_state_id);
-                     //child_node.setCC(w);
-                     //child_node.setBC(b_child_v); 
-
-                     map<Type2, SSNode>::iterator queueIt = queue.find(object);
-                     printQueue(); 
-
- 		     //int rand_100 = dist(mt);
-                     //cout<<"rand_100 = "<<rand_100<<endl;
-                     /*if (queueIt != queue.end()) {
-                        cout<<"\tDuplicate node."<<endl;
-                        printNode2(queueIt->first, queueIt->second);
-     
-                        SSNode  snode = queueIt->second;
-                        double wa = snode.getCC();
-                        queueIt->second.setCC(wa + w);
-                        double prob = (double)w/(double)(wa + w);
-                        cout<<"prob = "<<prob<<endl;
-                        int rand_100 = dist(mt);  //RanGen->IRandom(0, 99); 
-                        cout<<"rand_100 = "<<rand_100<<endl;  
-                        double a = ((double)rand_100)/100;
-                        cout<<"a = "<<a<<endl;
-                        if (a < prob) {
-                            cout<<"\tAdded even though is duplicate.\n";
-                            child_node.setCC(wa + w);
-                            std::pair<std::map<Type2, SSNode>::iterator, bool> ret;
-			    queue.erase(object);
-
-                            ret = queue.insert(pair<Type2, SSNode>(object, child_node));
-
-                            queueIt = ret.first;
-                            queueIt->second.setCC(child_node.getCC());
-
-                        }  else {
-                            cout<<"\tNot added."<<endl;
-                        }          
-                     } else {
-                        queue.insert(pair<Type2, SSNode>(object, child_node));
-                        cout<<"\tnew node added."<<endl;
-                        printNode2(object, child_node); 
-                     }*/
-                     queue.insert(pair<Type2, SSNode>(object, child_node));
-                      
-                  } else {
-                     cout<<"All are false - pruned!"<<endl;
-
-                  }
-                  cout<<"\n*********************************************\n"<<endl;
-             }
-
+                if (heuristics[j]->reach_state(s, *op, succ_state))
+                    h_is_dirty = true;
+            }
+            if (h_is_dirty && use_multi_path_dependence)
+                succ_node.set_h_dirty();
         }
 
-} 
+	int succ_h=0;
+	bool dead_end=false;
+        if (succ_node.is_new()) {
+	  //cout<<"succ_node is new"<<endl;fflush(stdout);
+            // We have not seen this state before.
+            // Evaluate and create a new node.
+            for (size_t j = 0; j < heuristics.size(); ++j){
+                heuristics[j]->evaluate(succ_state);
+		dead_end=heuristics[j]->is_dead_end();
+	      if (dead_end) {
+		//cout<<"dead end found"<<endl;fflush(NULL);
+		  succ_node.mark_as_dead_end();
+		  search_progress.inc_dead_ends();
+		  succ_h = INT_MAX/2;
+		  break;
+	      }
+	      else{
+		succ_h = max(succ_h,heuristics[j]->get_heuristic());
+	      }
+	    }
+	    //cout<<"succ_h:"<<succ_h<<endl;
+            succ_node.clear_h_dirty();
+            search_progress.inc_evaluated_states();
+            search_progress.inc_evaluations(heuristics.size());
 
+            // Note that we cannot use succ_node.get_g() here as the
+            // node is not yet open. Furthermore, we cannot open it
+            // before having checked that we're not in a dead end. The
+            // division of responsibilities is a bit tricky here -- we
+            // may want to refactor this later.
+            //open_list->evaluate(node.get_g() + get_adjusted_cost(*op), is_preferred);
+            open_list->evaluate2(node.get_g() + get_adjusted_cost(*op),succ_h);
+	    //cout<<"After evaluate2"<<endl;
+            //bool dead_end = open_list->is_dead_end();
 
-
-void EagerSearch::printQueue() {
-	cout<<"\nprintQueue:\n";
-	for (map<Type2, SSNode>::iterator iter = queue.begin(); iter!= queue.end(); iter++) {
-		Type2 t = iter->first;
-	        //SSNode t2 = iter->second;
-		vector<int> h_node_v = t.getHC();
-                int g = t.getLevel();
-                cout<<"h = ";
-                for (size_t i = 0; i < h_node_v.size(); i++) {
-		    cout<<h_node_v.at(i);
-                    if (i != h_node_v.size() - 1) {
-			cout<<"/";
-		    }
-		}
-                cout<<", g = "<<g<<", f = ";
-                for (size_t i = 0; i < h_node_v.size(); i++) {
-		    cout<<h_node_v.at(i) + g;
-                    if (i != h_node_v.size() - 1) {
-			cout<<"/";
-		    }
-		}
-                //cout<<", cc = "<<t2.getCC()<<", b_node_v = ";
-                /*vector<bool> b_node_v = t2.getBC();
-                for (size_t i = 0; i < b_node_v.size(); i++) {
-                    cout<<b_node_v.at(i);
-                    if (i != b_node_v.size() - 1) {
-                       cout<<"/";
-                    }
+            //TODO:CR - add an ID to each state, and then we can use a vector to save per-state information
+            if (do_pathmax) {
+                if ((node.get_h() - get_adjusted_cost(*op)) > succ_h) {
+                    //cout << "Pathmax correction: " << succ_h << " -> " << node.get_h() - get_adjusted_cost(*op) << endl;
+                    succ_h = node.get_h() - get_adjusted_cost(*op);
+                    heuristics[0]->set_evaluator_value(succ_h);
+                    open_list->evaluate(node.get_g() + get_adjusted_cost(*op), is_preferred);
+                    search_progress.inc_pathmax_corrections();
                 }
-                */
-                cout<<"\n";
-	}
-        cout<<"\nprintQueue End:\n";
-}
-
-void EagerSearch::printNode2(Type2 t, SSNode t2) {
-        cout<<"\nprintNode:\n";
-	vector<int> h_node_v = t.getHC();
-        int g = t.getLevel(); 
-	
-        for (size_t i = 0; i < h_node_v.size(); i++) {
-            cout<<h_node_v.at(i);
-            if (i != h_node_v.size() - 1) {
-		cout<<"/";
             }
-        }
-        cout<<", g = "<<g<<", f = ";
-        for (size_t i = 0; i < h_node_v.size(); i++) {
-            cout<<h_node_v.at(i) + g;
-            if (i != h_node_v.size() - 1) {
-               cout<<"/";
+            succ_node.open(succ_h, node, op);
+
+            open_list->insert(succ_state.get_id());
+	    //cout<<"After insert"<<endl;fflush(NULL);
+            if (search_progress.check_h_progress(succ_node.get_g())) {
+                reward_progress();
             }
-        }
-        cout<<", cc = "<<t2.getCC()<<", b_node_v = ";
-        /*vector<bool> b_node_v = t2.getBC();
-        for (size_t i = 0; i < b_node_v.size(); i++) {
-            cout<<b_node_v.at(i);
-            if (i != b_node_v.size() - 1) {
-               cout<<"/";
+        } else if (succ_node.get_g() > node.get_g() + get_adjusted_cost(*op)) {
+	  //cout<<"succ_node is not new"<<endl;fflush(stdout);
+            // We found a new cheapest path to an open or closed state.
+            if (reopen_closed_nodes) {
+                //TODO:CR - test if we should add a reevaluate flag and if it helps
+                // if we reopen closed nodes, do that
+                if (succ_node.is_closed()) {
+		  //cout<<"Reopening closed node"<<endl;fflush(NULL);
+                    /* TODO: Verify that the heuristic is inconsistent.
+                     * Otherwise, this is a bug. This is a serious
+                     * assertion because it can show that a heuristic that
+                     * was thought to be consistent isn't. Therefore, it
+                     * should be present also in release builds, so don't
+                     * use a plain assert. */
+                    //TODO:CR - add a consistent flag to heuristics, and add an assert here based on it
+                    search_progress.inc_reopened();
+                }
+		//cout<<"Revalued opened node"<<endl;fflush(NULL);
+                succ_node.reopen(node, op);
+                //heuristics[0]->set_evaluator_value(succ_node.get_h());
+                // TODO: this appears fishy to me. Why is here only heuristic[0]
+                // involved? Is this still feasible in the current version?
+                //open_list->evaluate(succ_node.get_g(), is_preferred);
+                open_list->evaluate2(succ_node.get_g(), succ_node.get_h());
+
+                open_list->insert(succ_state.get_id());
+            } else {
+                // if we do not reopen closed nodes, we just update the parent pointers
+                // Note that this could cause an incompatibility between
+                // the g-value and the actual path that is traced back
+                succ_node.update_parent(node, op);
             }
-        }*/
-	cout<<"\nprintNode End:\n";
-}
-
-void EagerSearch::generateReport() {
-	for (map<boost::dynamic_bitset<>, double>::iterator iter = collector.begin(); iter != collector.end();
-iter++) {
-		boost::dynamic_bitset<> b_node_v = iter->first;
-                double cc = iter->second;
-                cout<<"bc: ";
-                for (size_t i = 0; i < b_node_v.size(); i++) {
-		    cout<<b_node_v.test(i);
-                    if (i != b_node_v.size() - 1) {
-			cout<<"/";
-                    }
-		}
-                cout<<", cc: "<<(double)cc/(double)ss_probes<<"\n";
+        }else{
+	  //cout<<"succ_node is not new but g value is higher, so no worries"<<endl;fflush(stdout);
 	}
-        
-	collector.clear();
-}
+    }
+    //cout<<"returning IN_PROGRESS:"<<endl;fflush(stdout);
 
-double EagerSearch::getProbingResult() {
-	double expansions = 0;
- 
-	for (size_t i = 0; i < vcc.size(); i++) {
-	    SSNode n = vcc.at(i);
-	    expansions += n.getCC();
-	}
-	cout<<"expansions = "<<expansions<<endl;
-	return expansions;
+    return IN_PROGRESS;
 }
-
 
 pair<SearchNode, bool> EagerSearch::fetch_next_node() {
     /* TODO: The bulk of this code deals with multi-path dependence,
@@ -524,6 +316,7 @@ pair<SearchNode, bool> EagerSearch::fetch_next_node() {
        dependence as a separate search algorithm that wraps the "usual"
        search algorithm and adds the extra processing in the desired
        places. I think this would lead to much cleaner code. */
+  //cout<<"Fetching next_node"<<endl;fflush(stdout);
 
     while (true) {
         if (open_list->empty()) {
@@ -583,6 +376,7 @@ pair<SearchNode, bool> EagerSearch::fetch_next_node() {
         assert(!node.is_dead_end());
         update_jump_statistic(node);
         search_progress.inc_expanded();
+	//cout<<"Fetching next_node finished"<<endl;fflush(stdout);
         return make_pair(node, true);
     }
 }
@@ -598,14 +392,15 @@ void EagerSearch::dump_search_space() {
 }
 
 void EagerSearch::update_jump_statistic(const SearchNode &node) {
+    //cout<<"Started update_jump_statistic"<<endl;fflush(stdout);
     if (f_evaluator) {
-        heuristics[0]->set_evaluator_value(node.get_h());
+      int new_f_value = node.get_g()+node.get_h();
+        //heuristics[0]->set_evaluator_value(node.get_h());
         //f_evaluator->evaluate(node.get_g(), false);
         //int new_f_value = f_evaluator->get_value();
-	int new_f_value = node.get_g()+node.get_h();
-	
         search_progress.report_f_value(new_f_value);
     }
+    //cout<<"Finished update_jump_statistic"<<endl;fflush(stdout);
 }
 
 void EagerSearch::print_heuristic_values(const vector<int> &values) const {

@@ -247,7 +247,7 @@ SearchEngine *OptionParser::parse_cmd_line_aux(
 	      cout<<"new arg after erase:"<<arg2<<endl;
 	      //first allocate all the availabe mp probs to a vector to ensure no repetion of random probabilities
 	      vector<string> mp_probs;
-	      double heurs_to_generate=50000;
+	      double heurs_to_generate=10000;
 	        for(int j=0;j<int(heurs_to_generate);j++){
 		  std::stringstream str;
 		  str << fixed << setprecision(7) <<double(j+1)/heurs_to_generate;
@@ -288,8 +288,8 @@ SearchEngine *OptionParser::parse_cmd_line_aux(
 		else{
 		  arg2+=",size=200000,eps=60,colls=5),";
 		}*/
-		//arg2+=",size=200000,eps=30,colls=5),";
-		  arg2+=",size=20000,eps=120,colls=5),";
+		arg2+=",size=200000,eps=30,colls=5),";
+		  //arg2+=",size=20000,eps=120,colls=5),";
 	      }
 	      arg2.erase(arg2.end()-1);//remove ending
 	      arg2+="]))";

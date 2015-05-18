@@ -2,7 +2,6 @@
 #define EAGER_SEARCH_H
 
 #include <vector>
-#include <map>
 
 #include "evaluator.h"
 #include "global_state.h"
@@ -12,36 +11,11 @@
 #include "timer.h"
 
 #include "open_lists/open_list.h"
-#include "type2.h"
-#include "type_system2.h"
-#include "state_id.h"
-
-#include "ext/boost/dynamic_bitset.hpp"
-#include <random>
-#include <iostream>
-
 
 class GlobalOperator;
 class Heuristic;
 class Options;
 class ScalarEvaluator;
-
-class SSNode {
-private:
-        StateID id;
-	double cc;
-        //vector<bool> bc;
-public:
-	SSNode() : id(StateID::no_state), cc(0.0) {}
-        SSNode(StateID identifier, double w) : id(identifier), cc(w) {}
-        StateID getId() const {return this->id;}
-        void setId(StateID identifier) {this->id = identifier;}
-	double getCC() {return this->cc;}
-	void setCC(double w) {this->cc = w;}
-        //vector<bool> getBC() {return this->bc;}
-        //void setBC(vector<bool> b) {this->bc = b;}
-};
-
 
 class EagerSearch : public SearchEngine {
     // Search Behavior parameters
@@ -52,14 +26,6 @@ class EagerSearch : public SearchEngine {
     OpenList<StateID> *open_list;
     ScalarEvaluator *f_evaluator;
 
-    //ss+culprits
-    TypeSystem2* sampler;
-    map<Type2, SSNode> queue;    
-    int threshold;
-    double totalPrediction;
-    map<boost::dynamic_bitset<>, double> collector;
-    vector<SSNode> vcc;
-    int count_nodes;
 protected:
     SearchStatus step();
     std::pair<SearchNode, bool> fetch_next_node();
@@ -68,30 +34,19 @@ protected:
     void reward_progress();
 
     std::vector<Heuristic *> heuristics;
+    std::vector<Heuristic *> orig_heuristics;
     std::vector<Heuristic *> preferred_operator_heuristics;
     std::vector<Heuristic *> estimate_heuristics;
     // TODO: in the long term this
     // should disappear into the open list
 
     virtual void initialize();
-    //ss+culprits
-    //std::random_device rd;
-    //std::mt19937 mt;
-    //std::uniform_real_distribution<int> dist; 
 
 public:
     EagerSearch(const Options &opts);
     void statistics() const;
 
     void dump_search_space();
-    //ss+culprits
-    void predict(int probes);
-    void probe();
-    //bool check_all_bool_are_false(vector<bool> bc);
-    void printQueue(); 
-    void printNode2(Type2 t, SSNode t2);
-    void generateReport();
-    double getProbingResult();
 };
 
 #endif
