@@ -247,7 +247,8 @@ SearchEngine *OptionParser::parse_cmd_line_aux(
 	      cout<<"new arg after erase:"<<arg2<<endl;
 	      //first allocate all the availabe mp probs to a vector to ensure no repetion of random probabilities
 	      vector<string> mp_probs;
-	      double heurs_to_generate=10000;
+	      double heurs_to_generate=50000;
+	      cout<<"heurs_to_generate:"<<heurs_to_generate<<endl;
 	        for(int j=0;j<int(heurs_to_generate);j++){
 		  std::stringstream str;
 		  str << fixed << setprecision(7) <<double(j+1)/heurs_to_generate;
@@ -267,9 +268,9 @@ SearchEngine *OptionParser::parse_cmd_line_aux(
 		  arg2+=",disjoint=true";
 		}
 		 
-		/* random=rand()%1000+1;
+		 random=rand()%1000+1;
 		//cout<<"random2:"<<random<<endl;
-		 if(random<5){
+		 /*  if(random<5){
 		  arg2+=",size=2000000,eps=30,colls=5),";
 		}
 		else if(random<17){
@@ -289,12 +290,14 @@ SearchEngine *OptionParser::parse_cmd_line_aux(
 		  arg2+=",size=200000,eps=60,colls=5),";
 		}*/
 		arg2+=",size=200000,eps=30,colls=5),";
-		  //arg2+=",size=20000,eps=120,colls=5),";
+		  //arg2+=",size=20000,eps=120,colls=10),";
+		  //arg2+=",size=2000000,eps=30,colls=5),";
 	      }
 	      arg2.erase(arg2.end()-1);//remove ending
 	      arg2+="]))";
-	      //cout<<"final arg:"<<arg2<<endl;
 	    }
+	      //cout<<"final arg:"<<arg2<<endl;
+	    cout<<"GA type:"<<arg2.substr(arg2.size()-min(args.size()-1,unsigned(62)))<<endl;
             //OptionParser p(args[i], dry_run);
             OptionParser p(arg2.c_str(), dry_run);
             engine = p.start_parsing<SearchEngine *>();

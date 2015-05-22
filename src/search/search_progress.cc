@@ -32,10 +32,30 @@ void SearchProgress::add_heuristic(Heuristic *h) {
 }
 
 void SearchProgress::report_f_value(int f) {
+  static int iter=0;
+  static double last_HBF;
+  double current_HBF;
+  static double HBF_rate=0;
     if (f > lastjump_f_value) {
+      iter++;
         lastjump_f_value = f;
         print_f_line();
-	cout <<",generated_states:,"<<generated_states<<",dead_end_states:"<<dead_end_states<<",Dup States:"<<generated_states-evaluated_states<< ",]" << endl;
+	cout <<",generated_states:,"<<generated_states<<",dead_end_states:"<<dead_end_states<<",Dup States:"<<generated_states-evaluated_states;
+	if(iter>3){
+	  current_HBF=double(generated_states)/double(lastjump_generated_states);
+	  cout<<",HBF:,"<<current_HBF;
+	  HBF_rate=current_HBF/last_HBF;
+	  cout<<",HBF_rate:,"<<HBF_rate;
+	  last_HBF=current_HBF;
+	}
+	else if(iter>2){
+	  current_HBF=double(generated_states)/double(lastjump_generated_states);
+	  cout<<",HBF:,"<<current_HBF;
+	  last_HBF=current_HBF;
+	}
+	  
+	cout<< ",]" << endl;
+	  
         lastjump_expanded_states = expanded_states;
         lastjump_reopened_states = reopened_states;
         lastjump_evaluated_states = evaluated_states;

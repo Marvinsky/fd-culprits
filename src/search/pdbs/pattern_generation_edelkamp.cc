@@ -74,7 +74,7 @@ PatternGenerationEdelkamp::PatternGenerationEdelkamp(const Options &opts)
       ///cout<<"GAPDB,mutation_probability:"<<mutation_probability<<".Disj:"<<disjoint_patterns<<",restarted random sequence for g_random_seed"<<g_random_seed<<",complementary:"<<endl;
       timer.reset();
       //As we are running several methods for comparison, we ran PDB generation only once per problem and then add the generation time(minus the new generation time of just the selected pdbs) and the selected patterns
-      cout<<"use_saved_pdbs = "<<use_saved_pdbs<<endl;
+      //cout<<"use_saved_pdbs = "<<use_saved_pdbs<<endl;
       if(use_saved_pdbs){
 	//problem_name=g_plan_filename;
       /*for (int i = 0; i < argc_copy; ++i) {
@@ -100,8 +100,9 @@ PatternGenerationEdelkamp::PatternGenerationEdelkamp(const Options &opts)
 //	pattern_collection.push_back(v8);
 
 	//if(!get_All_GA_patterns_from_file(pattern_collection))
+	no_more_ga_pdbs=false;//in case it got set to true because of no unique pattersn
 	if(!get_GA_patterns_from_file(pattern_collection,disjoint_patterns,mutation_probability,pdb_max_size)){
-	  //cout<<"Cant find at least one previous GA, so returning dummy heuristic from now on"<<endl;
+	  //cout<<"Cant find at least one previous GA,possilby not generated or no unique patterns found"<<endl;
 	  no_more_ga_pdbs=true;
 	  return;
 	}
@@ -136,6 +137,9 @@ PatternGenerationEdelkamp::~PatternGenerationEdelkamp() {
 }
 
 void PatternGenerationEdelkamp::dump_best_heuristic() const {
+  //files are getting too big!
+  return;
+
 	static int i = 0;
 	if (best_fitness <0) {
 		cout<<"GAPDB dit not generate any complete PDB collection, so stop using!"<<endl;

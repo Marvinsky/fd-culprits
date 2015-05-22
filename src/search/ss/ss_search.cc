@@ -18,7 +18,7 @@
 
 bool ss_debug=false;
 int next_f_bound=INT_MAX/2;
-bool domination_check=true;
+bool domination_check=false;
 set<vector<int> > F_culprits;
 //#define _SS_DEBUG
 
@@ -29,16 +29,19 @@ SSSearch::SSSearch(const Options &opts) : SearchEngine(opts), current_state(g_in
 	ScalarEvaluator * evaluator = opts.get<ScalarEvaluator *>("eval");
 	std::set<Heuristic *> hset;
 	evaluator->get_involved_heuristics(hset);
+	int heuristics_active=0;
 	for (set<Heuristic *>::iterator it = hset.begin(); it != hset.end(); it++) {
 	  //Eliminate any heuristics which were not generated because we ran out of time
 	  //currently this is hacked to return not using heuristics
 	  if((*it)->is_using()){
 	    heuristics.push_back(*it);
+	    heuristics_active++;
 	  }
 	}
 	assert(heuristics.size() == 1);
 
 	int min_h = INT_MAX/2;
+	int max_h = 0;
         for (size_t i = 0; i < heuristics.size(); i++) {
             heuristics[i]->evaluate(g_initial_state());
             int aux = heuristics[i]->get_heuristic();
@@ -46,12 +49,31 @@ SSSearch::SSSearch(const Options &opts) : SearchEngine(opts), current_state(g_in
 		min_h = aux;
                 heuristic = heuristics[i];
 	    }
+	    max_h=max(aux,max_h);
 	}
-        cout<<"min_h(constructor) = "<<min_h<<endl;
+        cout<<"initial min_h(constructor) = "<<min_h<<",max_h:"<<max_h<<",heuristics_active:"<<heuristics_active<<",overall input heuristics:"<<hset.size()<<endl;
 	sampler = new TypeSystem(heuristic);
 	//this->RanGen2 = new CRandomMersenne((unsigned)time(NULL));        
 	this->RanGen2 = new CRandomMersenne(1);        
 	cout<<"random seed set to 1"<<endl;
+	if(!domination_check){
+	  if(heuristics.size()>1000){
+	    ss_probes=20;
+	  }
+	  else if(heuristics.size()>500){
+	    ss_probes=50;
+	  }
+	  else if(heuristics.size()>250){
+	    ss_probes=100;
+	  }
+	  else if(heuristics.size()>100){
+	    ss_probes=250;
+	  }
+	  else{
+	    ss_probes=500;
+	  }
+	  cout<<"Not doing domination_check, setting probes to :"<<ss_probes<<endl;
+	}
 }
 
 SSSearch::~SSSearch() {
@@ -122,14 +144,23 @@ SearchStatus SSSearch::step() {
 	  cout<<"F_boundary"<<threshold<<",checking for dominated heuri) stics,search_time:"<<search_time();
 	  cout<<"F_culprits:"<<F_culprits.size()<<",b_culprits:"<<collector.size()<<endl;
 
+	  bool just_demoted=false;
 	  while(true){
 	    at_least_one_dominated=false;
 	    int last_heuristic=-1;
 	  for (std::set<int>::iterator it2=undominated_heuristics.begin(); it2!=undominated_heuristics.end();){
+	    just_demoted=false;
 	    ///starting with true condition, in case 2 identical heurs get deleted as in openstacks problems 2-15
 	    //in that case all heuristics give the same f-values, they are useless but we still have to keep one
 	    //if all are identical
 	    for (std::set<int>::iterator it3=remaining_heurs_to_check.begin(); it3!=remaining_heurs_to_check.end();it3++){
+	      stop_checking_for_dominatedness=false;
+	      just_demoted=true;
+	      if(undominated_heuristics.find(*it3)==undominated_heuristics.end()){//cant compare to already demoted heurs!
+		//cout<<"h("<<*it3<<" is already demoted"<<endl;
+		just_demoted=false;
+		continue;
+	      }
 	      /*  if(dominator_counter[*it2]==heuristics.size()-1){
 		cout<<"skipping h("<<*it2<<") it is undominated from b_counters"<<endl;
 	      }
@@ -138,34 +169,35 @@ SearchStatus SSSearch::step() {
 	      }*/
 	      if(skip_checking.find(make_pair(*it2,*it3))!=skip_checking.end()){
 		  //cout<<"skipping pair("<<*it2<<","<<*it3<<")"<<endl;
+		  just_demoted=false;
 		  continue;
+	      }
+	      if(*it2==*it3){
+		just_demoted=false;
+		continue;//Do not check heuristic against self!!!
 	      }
 	      last_heuristic=*it3;
 	    //cout<<"Working on heuristics "<<*it2<<","<<*it3<<endl;
-	      if(undominated_heuristics.find(*it3)==undominated_heuristics.end()){//cant compare to already demoted heurs!
-		//cout<<"h("<<*it3<<" is already demoted"<<endl;
-		continue;
-	      }
-	      if(*it2==*it3){//skipping comparison with self
-		//cout<<"comparing with itself, skipping it2==it3"<<endl;
-		continue;
-	      }
 	      //cout<<"F_culprits.size:"<<F_culprits.size()<<endl;
     
-	      stop_checking_for_dominatedness=false;
 	      for (std::set<vector<int> >::iterator it=F_culprits.begin(); it!=F_culprits.end(); it++){
 		//check that h1 (*it2) is pruning and it3 is expanding, then h2 is undominated
 		//cout<<"it:"<<*it<<",it2:"<<*it2;fflush(stdout);cout<<"it3:"<<*it3<<endl;fflush(stdout);
 		if((*it)[*it2]>(*it)[*it3]){
 		  stop_checking_for_dominatedness=true;
+		  just_demoted=false;
 		  //cout<<"h("<<*it2<<") f:"<<(*it)[*it2]<<">h("<<*it3<<"):"<<(*it)[*it3]<<",so it is undominated by h("<<*it3<<endl;
 		  break;
 		}
 		  //cout<<"h("<<*it2<<") f:"<<(*it)[*it2]<<">h("<<*it3<<"):"<<(*it)[*it3]<<",so it is still undominated"<<endl;
 
 	      }
+	      if(stop_checking_for_dominatedness){
+		break;
+	      }
 	    }
-	    if(!stop_checking_for_dominatedness){
+	    if(just_demoted){
+	      //skip_checking.insert(make_pair(last_heuristic,*it2));//so reverse not possible, in case heuristics have same f values all over!!
 	      heuristics[*it2]->set_stop_using(true);
 	      demotted_heurs.push_back(*it2);
 	      cout<<"h("<<*it2<<" was dominated by heuristic "<<last_heuristic<<", demoting it to weak,time;"<<search_time()<<endl;
@@ -177,6 +209,16 @@ SearchStatus SSSearch::step() {
 		//cout<<"h("<<*it2<<") is not dominated by any of the other heuristics"<<endl;
 	      it2++;
 	    }
+	    /*std::set<int>::iterator it_to_erase;
+	    cout<<"also removing all dominated heuristics from remaining heurs,just_demoted size:"<<just_demotted.size()<<endl;
+	    for (unsigned j=0;j<just_demotted.size();j++){
+	      it_to_erase=remaining_heurs_to_check.find(just_demotted[j]);
+	      if(it_to_erase!=remaining_heurs_to_check.end()){
+		remaining_heurs_to_check.erase(it_to_erase);
+		cout<<"removed "<<just_demotted[j]<<"from remaining_heurs_to_check"<<endl;
+	      }
+	      just_demotted.clear();
+	    }*/
 	  }
 	  if(at_least_one_dominated){
 	    cout<<"Running test again because at least one heuristic was dominated"<<endl;
@@ -198,7 +240,7 @@ SearchStatus SSSearch::step() {
 	      temp_heuristics.push_back(heuristics[i]);
 	    }
 	  }
-	  cout<<"Finished checking for dominated_heuristics, heuristics left:"<<heuristics.size()<<",demotted_heurs:"<<demotted_heurs.size()<<",search_time:"<<search_time()<<endl;
+	  cout<<"Finished checking for dominated_heuristics, heuristics left:"<<temp_heuristics.size()<<",demotted_heurs:"<<demotted_heurs.size()<<",search_time:"<<search_time()<<endl;
 	  //update list of heuristics to the remaining ones
 	  cout<<"NEED TO FREE MEMORY OF UNUSED HEURISTICS!!!"<<endl;
 	  heuristics=temp_heuristics;
@@ -267,7 +309,7 @@ void SSSearch::predict(int probes) {
         cout<<"\ntotalPrediction : "<<totalPrediction<<"\n";
         generateSSCCReport();
         generateGeneratedReport();
-        generateExpandedReport();
+        //generateExpandedReport();
 
 }
 
@@ -760,17 +802,17 @@ void SSSearch::generateExpandedReport() {
                  }
             }
             
-            cout<<"g:"<<i<<"\n";
-            output<<"g:"<<i<<"\n";
+            //cout<<"g:"<<i<<"\n";
+            //output<<"g:"<<i<<"\n";
 
-            cout<<"size: "<<k<<"\n";            
-            output<<"size: "<<k<<"\n"; 
-            for (size_t j = 0; j < f.size(); j++) {
+            //cout<<"size: "<<k<<"\n";            
+            //output<<"size: "<<k<<"\n"; 
+            /*for (size_t j = 0; j < f.size(); j++) {
                  cout<<"\tf: "<<f.at(j)<<"\tq: "<<q.at(j)<<"\n";
                  output<<"\tf: "<<f.at(j)<<"\tq: "<<q.at(j)<<"\n";
             }
             cout<<"\n";
-            output<<"\n";
+            output<<"\n";*/
             
         }
         output.close();

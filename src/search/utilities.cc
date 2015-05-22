@@ -211,7 +211,7 @@ int get_peak_memory_in_kb(bool use_buffered_input) {
 }
 
 void print_peak_memory(bool use_buffered_input) {
-    cout << "Peak memory: " << get_peak_memory_in_kb(use_buffered_input) << " KB" << endl;
+    cout << "Peak memory: " << get_peak_memory_in_kb(use_buffered_input) << " KB" <<",time:"<<g_timer()<< endl;
 }
 
 
@@ -237,7 +237,7 @@ bool get_GA_patterns_from_file(std::vector<std::vector<int> > &all_pattern_col,b
     //cout<<"log_file:"<<log_file<<",g_plan_filename:"<<g_plan_filename;
     string problem_name_mod=problem_name2;
     problem_name_mod+=":";
-    cout<<",problem_name_mod:"<<problem_name_mod<<endl;
+    //cout<<",problem_name_mod:"<<problem_name_mod<<endl;
     std::string disjoint_pattern("disjoint_patterns:,");
     if(disjoint){
       disjoint_pattern+="1";
@@ -246,7 +246,7 @@ bool get_GA_patterns_from_file(std::vector<std::vector<int> > &all_pattern_col,b
       disjoint_pattern+="0";
     }
     
-    cout<<disjoint_pattern<<endl;
+    //cout<<disjoint_pattern<<endl;
     std::string mutation_rate_string("mp:,");
     //mutation_rate_string+=boost::lexical_cast<std::string>(mutation_rate);
     //mutation_rate_string+=std::to_string(mutation_rate);
@@ -256,19 +256,20 @@ bool get_GA_patterns_from_file(std::vector<std::vector<int> > &all_pattern_col,b
     //std::string str = strs.str();
     mutation_rate_string+=strs.str();
     mutation_rate_string+=",";
-    cout<<"mutation_rate_string:"<<mutation_rate_string<<endl;
+    //cout<<"mutation_rate_string:"<<mutation_rate_string<<endl;
     
     std::string pdb_max_size_string("size:,");
     std::ostringstream strs2;strs2 << std::fixed;strs2<<pdb_max_size;
     pdb_max_size_string+=strs2.str();
     pdb_max_size_string+=",";
-    cout<<"pdb_max_size_string:"<<pdb_max_size_string<<endl;
+    //int overall_original_pdbs_time;
+    //cout<<"pdb_max_size_string:"<<pdb_max_size_string<<endl;
 
     for(size_t pattern=0;pattern<stored_GA_patterns.size();pattern++){
      line=stored_GA_patterns.at(pattern);
      if( line.find(problem_name_mod)!=string::npos&&line.find(disjoint_pattern)!=string::npos
   &&line.find(mutation_rate_string)!=string::npos&&line.find(pdb_max_size_string)!=string::npos){
-       cout<<"line:"<<line<<endl;
+      // cout<<"line:"<<line<<endl;
        found_PDB=true;
   
        unsigned current_pos=line.find("]");
@@ -325,16 +326,19 @@ bool get_GA_patterns_from_file(std::vector<std::vector<int> > &all_pattern_col,b
        current_pos=line.find_first_of("0123456789",current_pos);
        temp=line.substr(current_pos);
        //double temp2=boost::lexical_cast<double>(temp);
-       //overall_original_pdbs_time+=temp2;
+       //overall_original_pdbs_time+=temp;
      }
    }
     if(!found_PDB){
       //cout<<"No existing gaPDB to read for current problem!, will return dummy heuristic!:"<<endl;
-      //exit(o);
+      //cout<<problem_name_mod<<",disjoint:"<<disjoint_pattern<<endl;
+      //cout<<"mr:"<<mutation_rate_string<<",pdb_max_size:"<<pdb_max_size_string<<endl;
+      //exit(0);
     }
-    /*  else{
-      cout<<"Original GAPDB time:"<<temp2<<mutation_rate_string<<disjoint_pattern<<",Original_pdbs_time:"<<overall_original_pdbs_time<<endl;
-    }*/
+      else{
+	//cout<<"GAPDB found"<<endl;
+      //cout<<"Original GAPDB time:"<<temp2<<mutation_rate_string<<disjoint_pattern<<",Original_pdbs_time:"<<overall_original_pdbs_time<<endl;
+    }
     return found_PDB;
 }
 
@@ -350,7 +354,7 @@ void load_GA_Patterns_from_file(){
   problem_name_mod = "/" + problem_name_mod;
   problem_name_mod = domain_name + problem_name_mod;
   problem_name_mod = "dat/" + problem_name_mod;
-  cout<<"problem_name_mod = "<<problem_name_mod<<endl;
+  //cout<<"problem_name_mod = "<<problem_name_mod<<endl;
 
   ifstream in(problem_name_mod.c_str());
   Timer load_GA_from_file_timer;
