@@ -51,6 +51,7 @@ PatternGenerationEdelkamp::PatternGenerationEdelkamp(const Options &opts)
       else {
 	time_limit=5;
       }
+      cout<<"pdb_max_size:"<<pdb_max_size<<",time_limit="<<time_limit<<endl;
       //cout<<"overall GA's pdb_gen_time_limit, currently:"<<pdb_gen_time_limit<<endl;
       if(g_timer()>pdb_gen_time_limit){
 	if(no_more_pdb_gen_print==true){

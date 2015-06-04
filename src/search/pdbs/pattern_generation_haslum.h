@@ -78,6 +78,7 @@ class PatternGenerationHaslum {
        (consisting of exactly one PDB for each goal variable) may break the maximum collection size limit,
        if the latter is set too small or if there are many goal variables with a large domain. */
     void initialize();
+    void dump_file ();
 public:
     PatternGenerationHaslum(const Options &opts);
     virtual ~PatternGenerationHaslum();

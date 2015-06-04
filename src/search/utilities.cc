@@ -222,6 +222,7 @@ bool is_product_within_limit(int factor1, int factor2, int limit) {
 }
 
 bool get_GA_patterns_from_file(std::vector<std::vector<int> > &all_pattern_col,bool disjoint,double mutation_rate,int pdb_max_size){
+  static bool first_call=true;
   if(stored_GA_patterns.size()==0){
     cout<<"No patterns stored,calling load_GA_Patterns_from_file"<<endl;
     load_GA_Patterns_from_file();
@@ -246,6 +247,9 @@ bool get_GA_patterns_from_file(std::vector<std::vector<int> > &all_pattern_col,b
       disjoint_pattern+="0";
     }
     
+    if(first_call){
+      cout<<"disjoint_pattern:"<<disjoint_pattern<<endl;
+    }
     //cout<<disjoint_pattern<<endl;
     std::string mutation_rate_string("mp:,");
     //mutation_rate_string+=boost::lexical_cast<std::string>(mutation_rate);
@@ -256,14 +260,18 @@ bool get_GA_patterns_from_file(std::vector<std::vector<int> > &all_pattern_col,b
     //std::string str = strs.str();
     mutation_rate_string+=strs.str();
     mutation_rate_string+=",";
-    //cout<<"mutation_rate_string:"<<mutation_rate_string<<endl;
+    if(first_call){
+      cout<<"mutation_rate_string:"<<mutation_rate_string<<endl;
+    }
     
     std::string pdb_max_size_string("size:,");
     std::ostringstream strs2;strs2 << std::fixed;strs2<<pdb_max_size;
     pdb_max_size_string+=strs2.str();
     pdb_max_size_string+=",";
     //int overall_original_pdbs_time;
-    //cout<<"pdb_max_size_string:"<<pdb_max_size_string<<endl;
+    if(first_call){
+      cout<<"pdb_max_size_string:"<<pdb_max_size_string<<endl;
+    }
 
     for(size_t pattern=0;pattern<stored_GA_patterns.size();pattern++){
      line=stored_GA_patterns.at(pattern);
@@ -329,10 +337,11 @@ bool get_GA_patterns_from_file(std::vector<std::vector<int> > &all_pattern_col,b
        //overall_original_pdbs_time+=temp;
      }
    }
-    if(!found_PDB){
-      //cout<<"No existing gaPDB to read for current problem!, will return dummy heuristic!:"<<endl;
-      //cout<<problem_name_mod<<",disjoint:"<<disjoint_pattern<<endl;
-      //cout<<"mr:"<<mutation_rate_string<<",pdb_max_size:"<<pdb_max_size_string<<endl;
+    if(!found_PDB&&first_call){
+      cout<<"No existing gaPDB to read for current problem!, will return dummy heuristic!:"<<endl;
+      cout<<problem_name_mod<<",disjoint:"<<disjoint_pattern<<endl;
+      cout<<"mr:"<<mutation_rate_string<<",pdb_max_size:"<<pdb_max_size_string<<endl;
+      first_call=false;
       //exit(0);
     }
       else{
@@ -494,4 +503,104 @@ bool get_All_GA_patterns_from_file(std::vector<std::vector<int> > &all_pattern_c
      }
        call_number++;
     return true;
+}
+void get_iPDB_patterns_from_file(std::vector<std::vector<int> > &all_pattern_col){
+  all_pattern_col.clear();//just in case this was previously populated
+  all_pattern_col.resize(1);//just in case this was previously populated
+    std::string line;
+    std::string temp;
+    unsigned found2;
+    unsigned next_pattern_pos;
+  
+    string task2 = problem_name2;
+    size_t found = task2.find(".");
+
+  string problem_name_mod = task2.substr(0, found);
+  problem_name_mod += ".dat";
+  problem_name_mod = "/" + problem_name_mod;
+  problem_name_mod = domain_name + problem_name_mod;
+  problem_name_mod = "dat/" + problem_name_mod;
+  //cout<<"problem_name_mod = "<<problem_name_mod<<endl;
+
+  ifstream in(problem_name_mod.c_str());
+    cout<<"g_plan_filename:"<<g_plan_filename;
+    bool found_PDB=false;
+    string problem_name_mod2=problem_name2;
+    problem_name_mod2+=":";
+    cout<<",problem_name_mod2:"<<problem_name_mod2<<endl;
+
+    if( in.is_open())
+    {
+          while( getline(in,line) ){
+	    if( line.find(problem_name_mod2)!=string::npos&&line.find("iPDB")!=string::npos){
+	      cout<<"line:"<<line<<endl;
+	      found_PDB=true;
+		
+	      unsigned current_pos=line.find("]");
+	      int num_databases = std::count(line.begin(), line.end(), ']') - 1;//the first ] is for the heuristic number
+	      cout<<"num_databases:"<<num_databases<<endl;
+	      all_pattern_col.resize(num_databases);
+
+
+	      current_pos=line.find("[",current_pos+1);
+	      //unsigned found2 = line.find("[",found+1);
+	      next_pattern_pos=line.find("-",current_pos+1);
+	      for(int i=0;i<num_databases;i++){
+		cout<<"reading database"<<i<<endl;
+		while(next_pattern_pos>line.find_first_of(",]",current_pos+1)){
+		//while(true)
+		  current_pos=line.find_first_of("0123456789",current_pos);//so it points to the next variable
+		  if(current_pos>next_pattern_pos){
+		    //cout<<"skipping empty database"<<endl;
+		    while(current_pos>next_pattern_pos){
+		      next_pattern_pos=line.find("-",next_pattern_pos+1);
+		      cout<<"skipped database "<<i<<" because it is empty"<<endl;
+		      //cout<<all_pattern_col.at(i);cout<<endl;
+		      i++;
+		    }
+		    i--;//need to decrease i by one or it will be one ahead by the for statement
+		    break;
+		  }
+		  //cout<<"\tcurrent_pos:"<<current_pos;
+		  found2 = line.find_first_of(",]",current_pos);
+		  //cout<<",found2:"<<found2;
+		  if(line.find_first_of(",]",current_pos)==string::npos){
+		    //cout<<",finished with pattern:"<<i<<",string finished"<<endl;
+		    break;
+		  }
+		  temp=line.substr(current_pos,found2-current_pos);
+		  //cout<<",next var:"<<temp<<",";
+		  int temp2=boost::lexical_cast<int>(temp);
+		  all_pattern_col.at(i).push_back(temp2);
+		  // cout<<",last int added:"<<all_pattern_col.at(i).back();
+		  current_pos=found2;//current_pos not pointing to next , or ]
+		  if(line.find_first_of(",",found2)>next_pattern_pos){
+		    //cout<<",finished with pattern:"<<i<<",pattern finished"<<endl;
+		    current_pos=line.find("[",next_pattern_pos);
+		    next_pattern_pos=line.find("-",next_pattern_pos+1);
+		    //cout<<"next_pattern_pos:"<<next_pattern_pos<<endl;
+		    break;
+		  }
+		}
+		cout<<"read pattern:";
+		cout<<all_pattern_col.at(i);cout<<endl;
+	      }
+	      //Now add to our time calculations how long did iPDB originally take to generate this PDBs
+	      current_pos=line.find("time:");
+	      current_pos=line.find_first_of("0123456789",current_pos);
+	      temp=line.substr(current_pos);
+	      cout<<"temp:"<<temp<<endl;
+	      double temp2=boost::lexical_cast<double>(temp);
+	      //overall_original_pdbs_time+=temp2;
+	      //cout<<"Original iPDB time:"<<temp2<<",Original_pdbs_time:"<<overall_original_pdbs_time<<endl;
+	    }
+	  }
+    }
+    else{
+      cout<<"File "<<problem_name_mod<<" does not exists!"<<endl;
+    }
+    if(!found_PDB){
+      cout<<"Killed, no existing iPDB to read for current problem:"<<endl;
+      exit(0);
+    }
 }

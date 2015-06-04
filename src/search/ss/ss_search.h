@@ -36,7 +36,7 @@ private:
 public:
         SSNode(): id(StateID::no_state), weight(0.0), g_real(0) {}
         SSNode(StateID identifier, double w, int g) : id(identifier), weight(w), g_real(g){}
-        StateID getId() const {return this->id;}
+        StateID get_id() const {return this->id;}
 	void setId(StateID identifier) {this->id = identifier;}
         double getWeight()  {return this->weight;}
         void setWeight(double w) {this->weight = w;}
@@ -45,6 +45,34 @@ public:
 	int getH() {return this->h;}
 	void setH(int H) {this->h = H;}
 };
+
+class SSQueue {
+private:
+	SSNode node;
+	Type type;
+public:
+	SSNode getNode() const {return this->node;}
+	void setNode(SSNode n) {this->node = n;}
+	Type getT() const {return this->type;}
+	void setT(Type t) {this->type = t;}
+};
+
+struct classcomp {
+        bool operator() (const SSQueue& lhs, const SSQueue& rhs) const {
+		return lhs.getNode().get_id() < rhs.getNode().get_id(); 
+        }
+};
+
+struct classcomp2 {
+        bool operator() (const SSNode& lhs, const SSNode& rhs) const {
+	  //cout<<"\t\t\tCalling classcomp2"<<endl;fflush(stdout);
+	  //cout<<"\t\t\tlhs.get_id():"<<lhs.get_id();fflush(stdout);
+	  //cout<<"\t\t\trhs.get_id():"<<rhs.get_id();fflush(stdout);
+		return lhs.get_id() < rhs.get_id(); 
+        }
+};
+
+#endif /*MRW_H_*/
 
 class SSSearch : public SearchEngine { 
 private:
@@ -72,7 +100,9 @@ private:
 
         CRandomMersenne* RanGen2;
 
-	
+	//IDA* - BFS
+	std::set<SSQueue, classcomp> L;
+	std::set<SSNode, classcomp2> check;
 
         //ss+culprits
         int threshold;
@@ -97,6 +127,5 @@ public:
         void predict(int probes);
 	int getMinHeur(vector<int> v);
 	void select_best_heuristics_greedy();
+	void BFS(SSNode root, Type type);
 };
-
-#endif /*MRW_H_*/

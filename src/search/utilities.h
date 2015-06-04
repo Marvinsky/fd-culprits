@@ -136,5 +136,6 @@ bool get_GA_patterns_from_file (std::vector<std::vector<int> > &all_pattern_col,
 void load_GA_Patterns_from_file();
 bool get_All_GA_patterns_from_file(std::vector<std::vector<int> > &all_pattern_col);
 int get_current_memory_in_kb(bool use_buffered_input) ;
+void get_iPDB_patterns_from_file(std::vector<std::vector<int> > &all_pattern_col);
 
 #endif

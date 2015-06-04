@@ -26,7 +26,7 @@ public:
                          const std::vector<int> &op_costs = std::vector<int>());
     virtual ~ZeroOnePDBsHeuristic();
     virtual int compute_heuristic(const GlobalState &state);
-    virtual void get_patterns(string &patterns);
+    //virtual void get_patterns(string &patterns);
     /* Returns the sum of all mean finite h-values of every PDB.
        This is an approximation of the real mean finite h-value of the Heuristic, because dead-ends are ignored for
        the computation of the mean finite h-values for a PDB. As a consequence, if different PDBs have different states
@@ -48,7 +48,7 @@ virtual string get_heur_call_name() {
   if(complementary){temp+=",complementary=true";}if(disjoint_patterns){temp+=",disjoint=true)";}else{temp+=")";}
   return temp;
 }
-
+virtual void get_patterns(string &patterns);
 };
 
 #endif

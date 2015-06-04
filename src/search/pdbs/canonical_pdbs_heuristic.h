@@ -60,6 +60,11 @@ public:
     const std::vector<PDBHeuristic *> &get_pattern_databases() const {return pattern_databases; }
     int get_size() const {return size; }
     void dump() const;
+    virtual void get_patterns(string &patterns);
+    virtual string get_heur_call_name() {
+      string temp="ipdb(max_time=200)";
+  return temp;
+}
 };
 
 #endif

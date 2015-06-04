@@ -93,6 +93,20 @@ void ZeroOnePDBsHeuristic::dump() const {
         cout << pattern_databases[i]->get_pattern() << endl;
     }
 }
+/*  
+void ZeroOnePDBsHeuristic::get_patterns(string &patterns){
+  //patterns="[";
+    for (size_t i = 0; i < pattern_databases.size(); ++i) {
+      patterns+="[";
+      patterns+=pattern_databases[i]->get_pattern_string();
+      patterns+="]";
+      //if(i<(pattern_databases.size()-1)){
+        patterns+="-";
+      //} 
+    }   
+  //patterns+="]-";
+}*/
+
 
 static Heuristic *_parse(OptionParser &parser) {
     parser.document_synopsis(

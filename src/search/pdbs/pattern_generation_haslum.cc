@@ -25,9 +25,11 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include <fstream>
 
 using namespace std;
 
+Timer glob_timer;
 struct HillClimbingTimeout : public exception {};
 
 PatternGenerationHaslum::PatternGenerationHaslum(const Options &opts)
@@ -41,7 +43,26 @@ PatternGenerationHaslum::PatternGenerationHaslum(const Options &opts)
       num_rejected(0),
       hill_climbing_timer(0) {
     Timer timer;
-    initialize();
+      if(use_saved_pdbs){
+      vector<vector<int> > pattern_collection;
+      get_iPDB_patterns_from_file(pattern_collection);
+      cout<<"finished get_iPDB_patterns_from_File"<<endl;fflush(stdout);
+      Options opts2;
+      opts2.set<TaskProxy *>("task", task);
+      opts2.set<int>("cost_type", cost_type);
+      opts2.set<vector<vector<int> > >("patterns", pattern_collection);
+      //opts2.set<bool>("complementary", complementary);
+      current_heuristic = new CanonicalPDBsHeuristic(opts2);
+    }
+      else{   
+      glob_timer.reset();
+      initialize();
+      }
+    //cout<<"returning best heuristic(iPDB)[,0,]:";
+    //current_heuristic->dump();
+    if(!use_saved_pdbs){//only if we are not reading the pdbs!
+      dump_file();
+    }
     cout << "Pattern generation (Haslum et al.) time: " << timer << endl;
 }
 
@@ -315,6 +336,10 @@ void PatternGenerationHaslum::hill_climbing(double average_operator_cost,
     cout << "iPDB: iterations = " << num_iterations << endl;
     cout << "iPDB: num_patterns = "
          << current_heuristic->get_pattern_databases().size() << endl;
+  
+    string patterns;
+    current_heuristic->get_patterns(patterns);
+    cout<<"ipdb patterns:"<<patterns<<endl;
     cout << "iPDB: size = " << current_heuristic->get_size() << endl;
     cout << "iPDB: generated = " << generated_patterns.size() << endl;
     cout << "iPDB: rejected = " << num_rejected << endl;
@@ -476,6 +501,59 @@ static Heuristic *_parse(OptionParser &parser) {
 
     PatternGenerationHaslum pgh(opts);
     return pgh.get_pattern_collection_heuristic();
+}
+
+void PatternGenerationHaslum::dump_file () {
+	if (pdb_dump_counter == 0) {
+                //Create directory dat
+                string datDirectory = "mkdir dat";
+                string domainDirectory = "mkdir dat/"+domain_name;
+		if (system(datDirectory.c_str())) {
+		   cout<<"dat directory created."<<endl;
+		} else {
+		   cout<<"dat directory already exists."<<endl;
+		}
+
+		if (system(domainDirectory.c_str())) {
+		   cout<<"domain directory created."<<endl;
+		} else {
+		   cout<<"domain directory already exists."<<endl;
+		}
+
+		string system_call = "/bin/rm dat/"+domain_name+"/";
+                string task2 = problem_name2;
+                size_t found2 = task2.find(".");
+                string task2_final = task2.substr(0, found2);
+		system_call += task2_final; 
+		system_call += ".dat";
+		cout<<"First call, removing system_call to avoid duplicate pdbs:"<<system_call<<endl;
+
+		int temp = system(system_call.c_str());
+		cout<<"rm status:"<<temp<<endl;
+		if (temp == 0) {
+			
+		}
+	}
+  pdb_dump_counter++;
+  ofstream outputFile;
+  string task3 = problem_name2;
+  size_t found3 = task3.find(".");
+  string file_name =  task3.substr(0, found3);
+  file_name += ".dat";
+  file_name = "/" + file_name;
+  file_name = domain_name + file_name;
+  file_name = "dat/" + file_name;
+  cout<<"file_name: "<<file_name<<endl;
+  outputFile.open(file_name.c_str(), ios::app);
+
+  static int i=0;
+  outputFile<<problem_name2<<":";
+  string patterns;
+  current_heuristic->get_patterns(patterns);
+  outputFile<<"returning best heuristic(iPDB)[,0,]:"<<patterns<<",time:"<<glob_timer()<<endl;
+  i++;
+  outputFile.flush();
+  outputFile.close();
 }
 
 static Plugin<Heuristic> _plugin("ipdb", _parse);
